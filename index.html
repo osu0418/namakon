@@ -83,7 +83,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
 </style>
 
 <div class="wrap">
-  <header><h1>生コンアプリ</h1><span class="han" id="han">版11</span></header>
+  <header><h1>生コンアプリ</h1><span class="han" id="han">版12</span></header>
 
   <section class="ireru">
     <label for="pdf">基礎伏図のPDFを入れる</label>
@@ -4875,6 +4875,10 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     }, []);
     const nobe = (L) => L.reduce((t, [a, b]) => t + Math.max(0, b - a), 0);
     const hiku = (parts, [ca, cb]) => parts.flatMap(([u, v]) => cb <= u || ca >= v ? [[u, v]] : [[u, Math.max(u, ca)], [Math.min(v, cb), v]].filter(([x, y]) => y - x > 0.5));
+    const fukasa = (soko) => {
+      for (const d of Object.keys(S.BOT)) if (Math.abs(S.BOT[d] - soko) < 1) return +d === 0 ? "標準" : +d / 100 + "D";
+      return "底Z0" + Math.round(soko);
+    };
     const G = /* @__PURE__ */ new Map(), kosaBasho = /* @__PURE__ */ new Set();
     const tasu2 = (na, Wmm, Hmm, len, basho2) => {
       if (len <= 0.5 || Hmm <= 0.5) return;
@@ -4915,10 +4919,11 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         const T = [u, ...[...kiri].filter((t) => t > u && t < v).sort((x, y) => x - y), v];
         for (let i = 0; i + 1 < T.length; i++) {
           const m = (T[i] + T[i + 1]) / 2, len = T[i + 1] - T[i], top = M._topAt(s, m), soko = M._soko(s, m);
-          if (!s.hiro) tasu2("220幅", 220, top - soko, len, basho2);
-          else if (top <= s.kadan) tasu2("380幅", 380, top - soko, len, basho2);
+          const fk = " " + fukasa(soko);
+          if (!s.hiro) tasu2("220幅" + fk, 220, top - soko, len, basho2);
+          else if (top <= s.kadan) tasu2("380幅" + fk, 380, top - soko, len, basho2);
           else {
-            tasu2(s.wall.type === "low" ? "380幅の下段" : "380幅の下段(段違い)", 380, s.kadan - soko, len, basho2);
+            tasu2((s.wall.type === "low" ? "380幅の下段" : "380幅の下段(段違い)") + fk, 380, s.kadan - soko, len, basho2);
             tasu2("増し打ち(220幅)", 220, top - s.kadan, len, basho2);
           }
         }
@@ -4932,6 +4937,12 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       v: g.v,
       uchiwake: [...g.uchi].map(([b, l]) => b + " " + (l / 1e3).toFixed(3) + "m")
     }));
+    const jun = (na) => {
+      if (/^増し打ち/.test(na)) return 1e9;
+      const m = / (標準|(\d+)D)$/.exec(na);
+      return m ? m[1] === "標準" ? 0 : +m[2] : 1e8;
+    };
+    gyo.sort((p, q) => jun(p.na) - jun(q.na) || (p.na.startsWith("220") ? 0 : 1) - (q.na.startsWith("220") ? 0 : 1));
     const HG = /* @__PURE__ */ new Map();
     for (const n of colSel) {
       const H = cols[n], h = H.top - H.bot, key = H.s + "|" + h;
@@ -4947,7 +4958,6 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Namakon = api;
 })(this);
-
 </script>
 <script>
 (function(root) {
@@ -5734,7 +5744,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
 
 </script>
 <script>
-const HAN = 11;
+const HAN = 12;
 NamakonIriguchi.hanKimeru(HAN);
 document.getElementById("han").textContent = "版" + HAN;
 const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.min.mjs";
