@@ -83,7 +83,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
 </style>
 
 <div class="wrap">
-  <header><h1>生コンアプリ</h1><span class="han" id="han">版12</span></header>
+  <header><h1>生コンアプリ</h1><span class="han" id="han">版14</span></header>
 
   <section class="ireru">
     <label for="pdf">基礎伏図のPDFを入れる</label>
@@ -127,13 +127,14 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         <div class="dougu"><button type="button" id="bShiki" aria-expanded="false" hidden>計算式を見る</button></div>
         <div id="shiki" class="shiki" hidden></div>
       </div>
+      <div class="dougu" id="uchiwakeSettei" hidden><button type="button" id="b6D" aria-pressed="false">6Dでも区切る</button></div>
       <div class="kekka2" id="uchiwakeBox" hidden>
         <div>打ち分け(区切りの線で分けた範囲ごと。ベース＋立上り)</div>
         <table class="wari" id="uchiwakeHyo"></table>
         <ul class="chuui" id="uchiwakeChuui"></ul>
-        <div class="setsumei">図の帯: 緑＝区切れる所、赤＝区切れない所(柱から1220以内・ダンパーのある柱の区間・6Dとそこへ差し掛かるハンチ)。×＝区切れない所を横切っている</div>
+        <div class="setsumei">図の帯: 緑＝区切れる所、赤＝区切れない所(柱から1220以内・ダンパーのある柱の区間・6Dとそこへ差し掛かるハンチ)。区切りは緑の上だけに置けます。6Dで区切る材料を用意したときは「6Dでも区切る」を押すと、6Dも緑になります。?＝その区切りでは範囲が分かれていない</div>
       </div>
-      <p id="senInfo">「なぞる」の間は1本指でなぞり、指を離した所で線が切れます(追加分は基礎の芯の上を305ごと、打ち分けは305ごとの点に吸い付く)。2本指で拡大・移動します。</p>
+      <p id="senInfo"></p>
       <details><summary>読み取りの確かめ</summary>
       <table class="kazu" aria-label="読めた数">
         <thead><tr><th>読んだもの</th><th style="text-align:right">数</th><th></th></tr></thead>
@@ -4800,6 +4801,23 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       }
       n++;
     }
+    const senWake = (kugiri || []).map((L) => {
+      const P = L.pts || [];
+      let kumi = 0, betsu = 0;
+      for (let k = 0; k + 1 < P.length; k++) {
+        const p = P[k], q = P[k + 1], tateSen = p[0] === q[0];
+        if (!tateSen && p[1] !== q[1]) continue;
+        const c = tateSen ? p[0] : p[1], lo = Math.min(tateSen ? p[1] : p[0], tateSen ? q[1] : q[0]), hi = Math.max(tateSen ? p[1] : p[0], tateSen ? q[1] : q[0]);
+        for (let t = 0; t < m.n; t++) {
+          if (tateSen ? m.x1[t] !== c || m.y0[t] < lo || m.y1[t] > hi : m.y1[t] !== c || m.x0[t] < lo || m.x1[t] > hi) continue;
+          const u = idx.get(tateSen ? (m.i[t] + 1) * 100003 + m.j[t] : m.i[t] * 100003 + m.j[t] + 1);
+          if (u == null) continue;
+          kumi++;
+          if (ban[u] !== ban[t]) betsu++;
+        }
+      }
+      return { kumi, wakareta: kumi > 0 && betsu > 0 };
+    });
     const H = Array.from({ length: n }, () => ({ base: 0, kabe: 0, hashira: 0, masu: [], cx: 0, cy: 0, w: 0, xmin: Infinity }));
     for (let t = 0; t < m.n; t++) {
       const h = H[ban[t]], a = (m.x1[t] - m.x0[t]) * (m.y1[t] - m.y0[t]);
@@ -4817,8 +4835,10 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     const hani = H.map((h, k) => ({ no: k + 1, ...ryo(h), masu: h.masu, cx: h.cx / h.w, cy: h.cy / h.w }));
     const kakera = hani.filter((h) => h.gokei * 1e9 < zen * 0.01);
     if (kakera.length && hani.length > 1) chuui.push("とても小さい範囲がある(" + kakera.map((h) => h.no).join("・") + "番)。区切りの線の引き方を確かめる");
-    if ((kugiri || []).length && hani.length < 2) chuui.push("区切りの線で範囲が分かれていない。線を基礎の外まで引く");
-    return { hani, chuui };
+    const nokori = senWake.map((w, i) => w.wakareta ? 0 : i + 1).filter(Boolean);
+    if (nokori.length) chuui.push(nokori.join("・") + "本目の区切りでは範囲が分かれていない(ほかの所でつながっている。同じ範囲を囲むように、つながっている通りにも区切りを足す)");
+    else if ((kugiri || []).length && hani.length < 2) chuui.push("区切りの線で範囲が分かれていない。線を基礎の外まで引く");
+    return { hani, chuui, senWake };
   }
   function keisan(nyu, settei, hani) {
     return tasu(junbi(nyu, settei), hani);
@@ -4958,6 +4978,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Namakon = api;
 })(this);
+
 </script>
 <script>
 (function(root) {
@@ -5042,14 +5063,26 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     }
     return best;
   }
+  KIMARI.KISO_MAGARU = 305;
+  function tenOn(K, V, c, x, y, settei) {
+    const m = settei && settei.MASU || KIMARI.MASU, iv = (V ? K.V : K.H).get(c) || [], al = V ? y : x;
+    let best = null;
+    for (const [a, b] of iv) {
+      const u = Math.min(b, Math.max(a, Math.round(al / m) * m)), d = Math.abs(u - al);
+      if (!best || d < best.d) best = { d, u };
+    }
+    return best ? { V, c, p: V ? [c, best.u] : [best.u, c] } : null;
+  }
   function kisoHajime(K, x, y, settei) {
     const t = kisoTen(K, x, y, settei);
     return t ? { pts: [t.p], kiso: K, ima: t } : null;
   }
   function kisoTsugi(sen, x, y, settei) {
-    const K = sen.kiso, t = kisoTen(K, x, y, settei), P = sen.pts, p = P[P.length - 1];
+    const K = sen.kiso, r = sen.ima, P = sen.pts, p = P[P.length - 1];
+    let t = kisoTen(K, x, y, settei);
+    if (!t) return false;
+    if (!(t.V === r.V && t.c === r.c) && Math.abs((t.V ? x : y) - t.c) > KIMARI.KISO_MAGARU) t = tenOn(K, r.V, r.c, x, y, settei);
     if (!t || onaji(p, t.p)) return false;
-    const r = sen.ima;
     const onSame = (V, c, q) => V ? q[0] === c && naka(K.V.get(c) || [], q[1]) : q[1] === c && naka(K.H.get(c) || [], q[0]);
     const tooru = (V, c, u0, u1) => {
       const iv = (V ? K.V : K.H).get(c) || [];
@@ -5164,6 +5197,89 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   const api = { kimari, kensa, ngRiyu, KIMARI };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Kugiri = api;
+})(this);
+
+</script>
+<script>
+(function(root) {
+  const KIMARI = { HANARE: 610, MASU: 305 };
+  function junbi(M, damper) {
+    const m = M.masu, X = m.X || [], Y = m.Y || [];
+    const ari = /* @__PURE__ */ new Set();
+    for (let t = 0; t < m.n; t++) ari.add(m.i[t] * 100003 + m.j[t]);
+    const xi = new Map(X.map((v, i) => [v, i])), yi = new Map(Y.map((v, i) => [v, i]));
+    return { M, X, Y, ari, xi, yi, segs: M.kukanSen || [], damper: damper || [], settei: {} };
+  }
+  const aru = (J, i, j) => J.ari.has(i * 100003 + j);
+  const bango = (A, v) => {
+    let lo = 0, hi = A.length - 2;
+    if (v < A[0] || v >= A[A.length - 1]) return -1;
+    while (lo < hi) {
+      const mid = lo + hi + 1 >> 1;
+      if (A[mid] <= v) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo;
+  };
+  function osameru(s, u0) {
+    const m = KIMARI.MASU;
+    let u = Math.round(u0 / m) * m;
+    const lo = Math.ceil((s.a + 1) / m) * m, hi = Math.floor((s.b - 1) / m) * m;
+    if (lo > hi) return null;
+    return Math.min(hi, Math.max(lo, u));
+  }
+  function erabu(J, x, y) {
+    let best = null;
+    for (const s of J.segs) {
+      const pe = s.V ? x : y, al = s.V ? y : x;
+      const d = Math.hypot(Math.abs(pe - s.c), Math.max(0, s.a - al, al - s.b));
+      if (d > KIMARI.HANARE || best && d >= best.d) continue;
+      const u = osameru(s, al);
+      if (u != null) best = { d, s, u };
+    }
+    return best ? { s: best.s, u: best.u } : null;
+  }
+  function zurasu(J, k, x, y) {
+    const u = osameru(k.s, k.s.V ? y : x);
+    return u == null ? k : { s: k.s, u };
+  }
+  function sen(J, k) {
+    const s = k.s, u = k.u;
+    const tate = !s.V, A = tate ? J.X : J.Y, B = tate ? J.Y : J.X, idx = (tate ? J.xi : J.yi).get(u);
+    if (idx == null) return { pts: null, riyu: "升目の線にのらない位置(" + u + ")" };
+    const naka = J.segs.filter((o) => o !== s && o.V === tate && Math.abs(u - o.c) < (o.hw || 110) && s.c >= o.a - (o.eA || 0) && s.c <= o.b + (o.eB || 0));
+    if (naka.length) return { pts: null, riyu: "基礎が交わる所なので区切れない" };
+    const sotoni = (jj) => tate ? aru(J, idx - 1, jj) || aru(J, idx, jj) : aru(J, jj, idx - 1) || aru(J, jj, idx);
+    const hashiru = (jj) => {
+      const mid = (B[jj] + B[jj + 1]) / 2;
+      return J.segs.some((o) => o !== s && o.V === tate && Math.abs(u - o.c) < (o.hw || 110) && mid >= o.a - (o.eA || 0) && mid <= o.b + (o.eB || 0));
+    };
+    const j0 = bango(B, s.c);
+    if (j0 < 0 || !sotoni(j0)) return { pts: null, riyu: "生コンのない所" };
+    let lo = j0, hi = j0;
+    while (lo - 1 >= 0 && sotoni(lo - 1) && !hashiru(lo - 1)) lo--;
+    while (hi + 1 < B.length - 1 && sotoni(hi + 1) && !hashiru(hi + 1)) hi++;
+    const p0 = B[lo], p1 = B[hi + 1];
+    const K = root.Kugiri || (typeof require === "function" ? (() => {
+      try {
+        return require("./kugiri.js");
+      } catch (e) {
+        return null;
+      }
+    })() : null);
+    if (K && K.ngRiyu) {
+      const S = Object.assign({}, K.KIMARI, J.settei || {});
+      for (const o of J.segs) {
+        if (o.V !== s.V || o.c < p0 || o.c > p1 || u <= o.a || u >= o.b) continue;
+        const r = K.ngRiyu(o, u, J.M.hashiraR || [], J.damper, J.segs, S);
+        if (r) return { pts: null, riyu: "区切れない所(" + r + ")" };
+      }
+    }
+    return { pts: tate ? [[u, p0], [u, p1]] : [[p0, u], [p1, u]], u, V: tate, s: { V: s.V, c: s.c, a: s.a, b: s.b } };
+  }
+  const api = { junbi, erabu, zurasu, sen, KIMARI };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.KugiriSen = api;
 })(this);
 
 </script>
@@ -5532,7 +5648,13 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     function kakuSen() {
       senG.innerHTML = senList.map((L, i) => `<polyline points="${pl(L.pts)}" class="sen" ${ns}/>${ten(L.pts[0], "hashi")}${ten(L.pts[L.pts.length - 1], "hashi")}<text x="${L.pts[0][0]}" y="${T(L.pts[0][1]) - fs * 0.4}" font-size="${fs * 0.9}" class="senNo" text-anchor="middle">${i + 1}</text>`).join("");
     }
+    let kugiriJ = null;
     function kakuIma() {
+      if (ima && ima.kugiri) {
+        const k = ima.kugiri, L = ima.L, p = k.s.V ? [k.s.c, k.u] : [k.u, k.s.c];
+        imaG.innerHTML = L.pts ? `<polyline points="${pl(L.pts)}" class="sen ima" ${ns}/>${ten(p, "yubi")}` : `${ten(p, "yubi")}<text x="${p[0]}" y="${T(p[1]) - fs * 1.2}" font-size="${fs}" class="senNo" text-anchor="middle">${esc(L.riyu || "区切れない")}</text>`;
+        return;
+      }
       imaG.innerHTML = ima ? `<polyline points="${pl(ima.pts)}" class="sen ima" ${ns}/>${ten(ima.pts[ima.pts.length - 1], "yubi")}` : "";
     }
     const kawatta = () => {
@@ -5569,7 +5691,11 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         yubi.delete(e.pointerId);
         return;
       }
-      if (mode === "nazoru" && e.button === 0) {
+      if (mode === "nazoru" && e.button === 0 && yoto === "uchiwake" && kugiriJ) {
+        const [x, y] = mm(e.clientX, e.clientY), k = KugiriSen.erabu(kugiriJ, x, y);
+        ima = k ? { kugiri: k, L: KugiriSen.sen(kugiriJ, k) } : null;
+        kakuIma();
+      } else if (mode === "nazoru" && e.button === 0) {
         const [x, y] = mm(e.clientX, e.clientY);
         ima = kiso && yoto === "tsuika" ? Nazori.kisoHajime(kiso, x, y) : Nazori.hajime(x, y);
         mae = [x, y];
@@ -5590,6 +5716,12 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         mae = [x, y];
         if (ima) {
           matsu = false;
+          kakuIma();
+        }
+      } else if (ima && ima.kugiri) {
+        const [x, y] = mm(e.clientX, e.clientY), k = KugiriSen.zurasu(kugiriJ, ima.kugiri, x, y);
+        if (k.u !== ima.kugiri.u) {
+          ima = { kugiri: k, L: KugiriSen.sen(kugiriJ, k) };
           kakuIma();
         }
       } else if (ima) {
@@ -5615,7 +5747,15 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         }
         return;
       }
-      if (ima) {
+      if (ima && ima.kugiri) {
+        const L = ima.L;
+        ima = null;
+        kakuIma();
+        if (e.type === "pointerup" && L.pts) {
+          senList.push({ pts: L.pts });
+          kawatta();
+        }
+      } else if (ima) {
         const L = Nazori.owari(ima);
         ima = null;
         kakuIma();
@@ -5686,6 +5826,10 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         kiso = K || null;
       },
       // 版9
+      kugiri: (J) => {
+        kugiriJ = J || null;
+      },
+      // 版14: 打ち分けは押して区切る(KugiriSen.junbi の結果)
       // 版8(確認役⑤): 図を入れ替える前に呼ぶ(絵のメモリ・見張り・時計を返す)
       kataduke: () => {
         clearTimeout(sh.timer);
@@ -5744,7 +5888,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
 
 </script>
 <script>
-const HAN = 12;
+const HAN = 14;
 NamakonIriguchi.hanKimeru(HAN);
 document.getElementById("han").textContent = "版" + HAN;
 const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.min.mjs";
@@ -5842,7 +5986,11 @@ function show(R) {
   if (ZU && ZU.kataduke) ZU.kataduke();
   if (R.g.k) {
     ZU = ZumenZu.tsukuru($("zu"), R, { onSen: senInfo });
-    if (R.M) ZU.kisoSen(Nazori.kisoSen(R.M.kukanSen));
+    if (R.M) {
+      ZU.kisoSen(Nazori.kisoSen(R.M.kukanSen));
+      ZU.kugiri(R.kugiriJ = KugiriSen.junbi(R.M, R.damper));
+      R.kugiriJ.settei = kugiriSettei();
+    }
     modeKae("nazoru");
     yotoKae(YOTO);
   } else {
@@ -5891,7 +6039,7 @@ let YOTO = "tsuika";
 function senInfo(L) {
   if (YOTO === "tsuika") tsuikaKeisan(L);
   else uchiwakeKeisan(L);
-  $("senInfo").textContent = L.length ? "なぞった線: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 " + l.pts.length + "点・長さ " + nagasa(l.pts) + "mm").join("、") + ")" : "「なぞる」の間は1本指でなぞり、指を離した所で線が切れます(追加分は基礎の芯の上を305ごと、打ち分けは305ごとの点に吸い付く)。2本指で拡大・移動します。";
+  $("senInfo").textContent = L.length ? YOTO === "uchiwake" ? "区切り: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 長さ " + nagasa(l.pts) + "mm").join("、") + ")" : "なぞった線: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 " + l.pts.length + "点・長さ " + nagasa(l.pts) + "mm").join("、") + ")" : YOTO === "uchiwake" ? "打ち分けは、区切りたい基礎に指を置くと区切りの線(ベースの端までまっすぐ)が出ます。押したまま動かすと305ごとにずれ、指を離した所で決まります。2本指で拡大・移動します。" : "「なぞる」の間は1本指でなぞり、指を離した所で線が切れます(基礎の芯の上を305ごとに吸い付く)。2本指で拡大・移動します。";
 }
 const f3 = (v) => v.toFixed(3);
 let SHU = "tachi";
@@ -5953,10 +6101,14 @@ function uchiwakeKeisan(L) {
     $("uchiwakeBox").hidden = true;
     return;
   }
-  const W = Namakon.wakeru(M, L), C = Kugiri.kensa(M, last.damper, L);
+  const W = Namakon.wakeru(M, L), C = Kugiri.kensa(M, last.damper, L, kugiriSettei());
   const m = M.masu;
   ZU.nuru(L.length ? W.hani.flatMap((h, k) => h.masu.map((t) => ({ r: [m.x0[t], m.x1[t], m.y0[t], m.y1[t]], iro: IRO[k % IRO.length] }))) : []);
-  ZU.fuda([...L.length ? W.hani.map((h) => ({ x: h.cx, y: h.cy, t: String(h.no) })) : [], ...C.kosa.filter((k) => !k.ok).map((k) => ({ x: k.x, y: k.y, cls: "batsu" }))]);
+  ZU.fuda([
+    ...L.length ? W.hani.map((h) => ({ x: h.cx, y: h.cy, t: String(h.no) })) : [],
+    ...C.kosa.filter((k) => !k.ok).map((k) => ({ x: k.x, y: k.y, cls: "batsu" })),
+    ...(W.senWake || []).map((w, i) => w.wakareta ? null : { x: (L[i].pts[0][0] + L[i].pts[L[i].pts.length - 1][0]) / 2, y: (L[i].pts[0][1] + L[i].pts[L[i].pts.length - 1][1]) / 2, t: "?" }).filter(Boolean)
+  ]);
   const goukei = W.hani.reduce((s, h) => ({ base: s.base + h.base, tachi: s.tachi + h.tachi, gokei: s.gokei + h.gokei }), { base: 0, tachi: 0, gokei: 0 });
   const gyo = (na, h, iro) => `<tr><td>${iro ? `<span style="display:inline-block;width:10px;height:10px;background:${iro};margin-right:4px"></span>` : ""}<b>${na}</b></td><td><b>${f3(h.gokei)} m³</b></td><td>ベース ${f3(h.base)}・立上り ${f3(h.tachi)}</td></tr><tr><td></td><td colspan="2" style="color:var(--mute)">${Namakon.warimashi(h.gokei, [3, 5, 7, 10]).map((w) => "+" + w.p + "% " + f3(w.v)).join("　")}</td></tr>`;
   $("uchiwakeHyo").innerHTML = (L.length ? W.hani.map((h, k) => gyo(h.no + "番", h, IRO[k % IRO.length])).join("") : "") + gyo("全体", goukei, null);
@@ -5973,10 +6125,22 @@ function yotoKae(k) {
   ZU.fuda([]);
   $("tsuikaBox").hidden = true;
   $("uchiwakeBox").hidden = true;
-  ZU.kimari(k === "uchiwake" && last && last.M ? Kugiri.kimari(last.M, last.damper) : null);
+  ZU.kimari(k === "uchiwake" && last && last.M ? Kugiri.kimari(last.M, last.damper, kugiriSettei()) : null);
+  $("uchiwakeSettei").hidden = k !== "uchiwake";
   ZU.yoto(k);
 }
 $("bTsuika").onclick = () => yotoKae("tsuika");
+let ROKU_D = false;
+const kugiriSettei = () => ROKU_D ? { DOWN_NG: Infinity } : {};
+$("b6D").onclick = () => {
+  ROKU_D = !ROKU_D;
+  $("b6D").setAttribute("aria-pressed", String(ROKU_D));
+  if (last && last.kugiriJ) last.kugiriJ.settei = kugiriSettei();
+  if (YOTO === "uchiwake" && ZU && last && last.M) {
+    ZU.kimari(Kugiri.kimari(last.M, last.damper, kugiriSettei()));
+    senInfo(ZU.sen());
+  }
+};
 function shuKae(k) {
   SHU = k;
   $("bTachi").setAttribute("aria-pressed", k === "tachi");
