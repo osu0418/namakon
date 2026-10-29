@@ -1,13 +1,13 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <!doctype html>
-<html lang="ja">
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="robots" content="noindex, nofollow">
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
 <title>生コンアプリ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDGothic:wght@700&display=swap">
 <style>
-/* 現場で片手で見る道具。上に図面を入れる帯、その下に「読めたもの」の数と図。色は生コンの灰と、型枠の板の茶 */
+
 :root {
   --bg: #f3f4f2; --panel: #ffffff; --fg: #1d2421; --mute: #5d6762; --line: #d3d8d4;
   --accent: #8a5a2b; --d0: #7d8782; --d3: #2f6fb0; --d6: #1b2f6b; --han: #d9772b; --base: #a7744a;
@@ -41,8 +41,8 @@ h1 { font-size: 20px; margin: 0; text-wrap: balance; }
 .pill.ok { color: var(--ok); } .pill.ng { color: var(--warn); }
 .zu { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .zu svg { display: block; width: 100%; height: 62vh; min-height: 320px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-.zu svg.zumenAri { background: #fff; }   /* 版8: 図面を敷いている間は紙の白 */
-.zu .me { fill: none; stroke: #b9bfbb; stroke-width: 1px; opacity: .7; }   /* 版8: 305の目盛り(薄い灰色の細い線) */
+.zu svg.zumenAri { background: #fff; }   
+.zu .me { fill: none; stroke: #b9bfbb; stroke-width: 1px; opacity: .7; }   
 .zu .sen { fill: none; stroke: var(--accent); stroke-width: 4px; stroke-linejoin: round; }
 .zu .sen.ima { stroke-dasharray: 6 4; }
 .zu .hashi { stroke: var(--accent); stroke-width: 12px; stroke-linecap: round; }
@@ -51,7 +51,7 @@ h1 { font-size: 20px; margin: 0; text-wrap: balance; }
 .zu .nuri { fill: #e0742c; opacity: .45; }
 .zu .kOk { fill: #2e8b2e; opacity: .9; }
 .zu .kNg { fill: #d23c3c; opacity: .9; }
-.zu svg.zumenAri .kOk, .zu svg.zumenAri .kNg { opacity: .55; }   /* 版8: 図面の線が透けて見えるように */
+.zu svg.zumenAri .kOk, .zu svg.zumenAri .kNg { opacity: .55; }   
 .zu .batsu { stroke: #b00; stroke-width: 5px; stroke-linecap: round; }
 .wari td:first-child { white-space: nowrap; }
 .zu .fudaMaru { fill: var(--panel); stroke: var(--fg); stroke-width: 20; }
@@ -71,14 +71,19 @@ h1 { font-size: 20px; margin: 0; text-wrap: balance; }
 .chuui { margin: 0; padding-left: 1.2em; font-size: 14px; }
 .chuui li { color: var(--warn); }
 details summary { cursor: pointer; font-size: 14px; color: var(--mute); }
+
+.shiki { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 8px; font-size: 14px; }
+.shiki .na { font-weight: 700; }
+.shiki .shi { font-family: var(--f-num); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.shiki .ki { color: var(--mute); font-size: 13px; }
+.shiki details summary { font-size: 13px; }
+.shiki .gokei { border-top: 1px solid var(--line); padding-top: 6px; font-weight: 700; }
 .setsumei { font-size: 13px; color: var(--mute); margin: 0; }
 input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
-</head>
-<body>
 
 <div class="wrap">
-  <header><h1>生コンアプリ</h1><span class="han" id="han">版10</span></header>
+  <header><h1>生コンアプリ</h1><span class="han" id="han">版11</span></header>
 
   <section class="ireru">
     <label for="pdf">基礎伏図のPDFを入れる</label>
@@ -89,6 +94,13 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   <section id="kekka" hidden>
     <div class="wrap">
       <p id="teimei"></p>
+      <div class="kekka2" id="zentaiBox" hidden>
+        <div>全体の量(図面の全部)</div>
+        <div class="ryo" id="zentaiRyo"></div>
+        <table class="wari" id="zentaiWari"></table>
+        <div class="wari" id="zentaiMashi" style="color:var(--mute)"></div>
+        <table class="wari" id="zencho" hidden></table>
+      </div>
       <div class="dougu" role="tablist" aria-label="使い道">
         <button type="button" id="bTsuika" aria-pressed="true">追加分</button>
         <button type="button" id="bUchiwake" aria-pressed="false">打ち分け</button>
@@ -112,6 +124,8 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         <div class="ryo" id="tsuikaRyo"></div>
         <table class="wari" id="tsuikaWari"></table>
         <ul class="chuui" id="tsuikaChuui"></ul>
+        <div class="dougu"><button type="button" id="bShiki" aria-expanded="false" hidden>計算式を見る</button></div>
+        <div id="shiki" class="shiki" hidden></div>
       </div>
       <div class="kekka2" id="uchiwakeBox" hidden>
         <div>打ち分け(区切りの線で分けた範囲ごと。ベース＋立上り)</div>
@@ -4186,6 +4200,9 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     FB_W: 330,
     FB_NOBI: 55,
     W_HALF: 110,
+    W380_HALF: 190,
+    KADAN_TOP: -310,
+    // 版11: 380幅の半分の幅と、段違いの下段の天端(Z0−310)
     DANSA: { 300: 305, 600: 610, 900: 915 },
     NANAME_ZURE: 100,
     SAISHO: 5,
@@ -4209,13 +4226,30 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     const chizu = nyu.chizu || null;
     const segs = kukan.map((k, i) => {
       const V = k.x1 === k.x2, c = V ? k.x1 : k.y1, a = V ? Math.min(k.y1, k.y2) : Math.min(k.x1, k.x2), b = V ? Math.max(k.y1, k.y2) : Math.max(k.x1, k.x2);
-      return { i, V, c, a, b, depth: k.depth, fb: !!k.fb, cut: k.cut, fugo: k.fugo, han: [], dan: null, wall: walls[k.wall] };
+      const wall = walls[k.wall], hiro2 = !!(wall && wall.type && wall.type !== "std");
+      return { i, V, c, a, b, depth: k.depth, fb: !!k.fb, cut: k.cut, fugo: k.fugo, han: [], dan: null, wall, hiro: hiro2, hw: hiro2 ? S.W380_HALF : S.W_HALF };
     });
     if (!segs.length) return { zentai: kara(), chuui: ["基礎の区間がないので数えられない"], oshirase, kimari: S, kazu: { masume: 0, komakai: 0, masu: 0 }, masu: kuuMasu(), saibun: null };
     for (const s of segs) if (S.BOT[s.depth] == null) chuui.push(basho(s) + " の深さ(" + s.depth + ")の決まりがない。ダウンなしとして数えた");
     const bot = (d) => S.BOT[d] != null ? S.BOT[d] : S.BOT[0];
-    const hiro = segs.filter((s) => s.wall && s.wall.type && s.wall.type !== "std");
-    if (hiro.length) chuui.push("380幅の基礎(" + hiro.length + "区間)は生コンの決まりがまだない。220幅・天端は天端の地図のまま数えた: " + hiro.slice(0, 6).map(basho).join("・") + (hiro.length > 6 ? " ほか" : ""));
+    const hiro = segs.filter((s) => s.hiro);
+    if (hiro.length) oshirase.push("380幅の基礎が " + hiro.length + " 区間ある。3Cは 380×290、段違いは 下段380×300＋増し打ち220×260 で数えた");
+    const hashiNobi = (s, e) => {
+      let k = null, t = null;
+      for (const o of segs) {
+        if (o === s) continue;
+        if (o.V !== s.V && Math.abs(o.c - e) < 1 && o.a - 1 <= s.c && s.c <= o.b + 1) k = Math.max(k == null ? 0 : k, o.hw);
+        else if (o.V === s.V && Math.abs(o.c - s.c) < 1 && (Math.abs(o.a - e) < 1 || Math.abs(o.b - e) < 1)) t = Math.max(t == null ? 0 : t, o.hw);
+      }
+      if (k != null) return Math.min(s.hw, k);
+      if (t != null) return t >= s.hw ? s.hw : 0;
+      return s.hw;
+    };
+    for (const s of segs) {
+      s.eA = hashiNobi(s, s.a);
+      s.eB = hashiNobi(s, s.b);
+    }
+    for (const s of segs) if (s.hiro) s.kadan = S.KADAN_TOP;
     for (const h of hanch) {
       const [hx, hy, dx, dy, Sn, kind] = h;
       if (Sn == null) {
@@ -4277,7 +4311,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       return t >= h.dd + S.NANAME_ZURE && t < h.Sn + S.NANAME_ZURE;
     });
     const rects = (s, w, nobiA, nobiB) => s.V ? [s.c - w, s.c + w, s.a - nobiA, s.b + nobiB] : [s.a - nobiA, s.b + nobiB, s.c - w, s.c + w];
-    const kabe = segs.map((s) => rects(s, S.W_HALF, S.W_HALF, S.W_HALF));
+    const kabe = segs.map((s) => rects(s, s.hw, s.eA, s.eB));
     const fbR = [];
     const hashira = cols.map((c) => {
       const h = (c.s || 380) / 2;
@@ -4354,6 +4388,19 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       }
       return segs[bi];
     };
+    const kabeAt = (x, y) => {
+      const out = [], ci = Math.floor(x / G), cj = Math.floor(y / G), mita = /* @__PURE__ */ new Set();
+      for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++) {
+        const Lh = hako.get(hk(i, j));
+        if (!Lh) continue;
+        for (const o of Lh) {
+          if (mita.has(o.i)) continue;
+          mita.add(o.i);
+          if (inR(kabe[o.i], x, y)) out.push(o);
+        }
+      }
+      return out;
+    };
     function ten(x, y, hrf) {
       const hr = hrf ? hrf(x, y) : 0, out = { hr, base: 0, kabe: 0, hashira: 0, sig: "" };
       const ib = inBase(x, y), col = hashira.findIndex((H) => inR(H.r, x, y)), iw = kabe.some((r) => inR(r, x, y));
@@ -4373,7 +4420,19 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         out.hashira = hashira[col].top - hashira[col].bot;
         sig += "C" + col;
       } else if (iw) {
-        out.kabe = topAt(s, al) - profile(s, al)[1];
+        let top = -Infinity, soko = Infinity;
+        for (const o of kabeAt(x, y)) {
+          const u = o.V ? y : x;
+          let t = topAt(o, u);
+          if (o.hiro && Math.abs((o.V ? x : y) - o.c) > S.W_HALF) t = Math.min(t, o.kadan);
+          top = Math.max(top, t);
+          soko = Math.min(soko, profile(o, u)[1]);
+        }
+        if (!isFinite(top)) {
+          top = topAt(s, al);
+          soko = profile(s, al)[1];
+        }
+        out.kabe = Math.max(0, top - soko);
         sig += "W" + out.kabe;
       }
       out.sig = sig;
@@ -4419,6 +4478,11 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     kabe.forEach(addR);
     fbR.forEach(addR);
     hashira.forEach((H) => addR(H.r));
+    for (const s of segs) if (s.hiro) {
+      const B = s.V ? xs : ys;
+      B.add(s.c - S.W_HALF);
+      B.add(s.c + S.W_HALF);
+    }
     for (const P of shapes) for (const [x, y] of P) {
       xs.add(x);
       ys.add(y);
@@ -4469,13 +4533,27 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     masu.X = X;
     masu.Y = Y;
     const saibun = (x0, x1, y0, y1, hrf, add, kakukaku) => cell(x0, x1, y0, y1, hrf, add, kakukaku);
-    const kukanSen = segs.map((s) => ({ i: s.i, V: s.V, c: s.c, a: s.a, b: s.b, depth: s.depth, han: s.han.map((h) => ({ node: h.node, dirn: h.dirn, Sn: h.Sn, dp: h.dp })) }));
-    const hashiraR = hashira.map((H) => ({ x: H.c.x, y: H.c.y, r: H.r }));
+    const kukanSen = segs.map((s) => ({ i: s.i, V: s.V, c: s.c, a: s.a, b: s.b, depth: s.depth, hw: s.hw, eA: s.eA, eB: s.eB, hiro: s.hiro, fugo: s.fugo, han: s.han.map((h) => ({ node: h.node, dirn: h.dirn, Sn: h.Sn, dp: h.dp })) }));
+    const hashiraR = hashira.map((H) => ({ x: H.c.x, y: H.c.y, r: H.r, s: H.c.s || 380, top: H.top, bot: H.bot }));
     const chikai = (x, y) => {
       const s = nearest(x, y);
       return s ? { i: s.i, V: s.V, c: s.c, a: s.a, b: s.b } : null;
     };
-    return { zentai: ryo(Z), chuui, oshirase, kimari: S, kazu: { masume: (X.length - 1) * (Y.length - 1), komakai, masu: masu.n }, masu, saibun, kukanSen, hashiraR, chikai };
+    return {
+      zentai: ryo(Z),
+      chuui,
+      oshirase,
+      kimari: S,
+      kazu: { masume: (X.length - 1) * (Y.length - 1), komakai, masu: masu.n },
+      masu,
+      saibun,
+      kukanSen,
+      hashiraR,
+      chikai,
+      _segs: segs,
+      _topAt: topAt,
+      _soko: (s, u) => profile(s, u)[1]
+    };
   }
   function tasu(M, hani) {
     const H0 = hani && hani.length ? hani : null;
@@ -4573,10 +4651,11 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         let hit = false;
         for (const s of M.kukanSen || []) {
           if (s.V !== V || Math.abs(s.c - c) > TOL) continue;
-          const a = lo <= s.a ? s.a - W : lo, b = hi >= s.b ? s.b + W : hi;
+          const hw = s.hw || W;
+          const a = lo <= s.a ? s.a - (s.eA != null ? s.eA : W) : lo, b = hi >= s.b ? s.b + (s.eB != null ? s.eB : W) : hi;
           if (b <= a) continue;
           hit = true;
-          shikaku.push(V ? [s.c - W, s.c + W, a, b] : [a, b, s.c - W, s.c + W]);
+          shikaku.push(V ? [s.c - hw, s.c + hw, a, b] : [a, b, s.c - hw, s.c + hw]);
           for (const H of M.hashiraR || []) {
             if ((V ? H.x : H.y) !== s.c) continue;
             const r = H.r, ra = V ? r[2] : r[0], rb = V ? r[3] : r[1], A = Math.max(ra, lo), B = Math.min(rb, hi);
@@ -4761,7 +4840,110 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   function warimashi(v, ritsu) {
     return (ritsu || [0, 3, 5, 7, 10]).map((p) => ({ p, v: v * (1 + p / 100) }));
   }
-  const api = { junbi, tasu, tsuika, tsuikaBase, wakeru, keisan, warimashi, KIMARI };
+  function shiki(M, senList, K0) {
+    const S = M.kimari, W = S.W_HALF, TOL = S.MASU / 2, K = K0 || tsuika(M, senList);
+    const segs = M._segs || [], cols = M.hashiraR || [];
+    const sel = /* @__PURE__ */ new Map(), colSel = /* @__PURE__ */ new Set();
+    const naka = (s, e) => segs.some((o) => o !== s && (o.V !== s.V ? Math.abs(o.c - e) < 1 && o.a - 1 <= s.c && s.c <= o.b + 1 : Math.abs(o.c - s.c) < 1 && (Math.abs(o.a - e) < 1 || Math.abs(o.b - e) < 1)));
+    for (const Ln of senList || []) {
+      const P = Ln.pts || [];
+      for (let k = 0; k + 1 < P.length; k++) {
+        const p = P[k], q = P[k + 1];
+        if (p[0] !== q[0] && p[1] !== q[1]) continue;
+        const V = p[0] === q[0], c = V ? p[0] : p[1], lo = Math.min(V ? p[1] : p[0], V ? q[1] : q[0]), hi = Math.max(V ? p[1] : p[0], V ? q[1] : q[0]);
+        for (const s of segs) {
+          if (s.V !== V || Math.abs(s.c - c) > TOL) continue;
+          const a0 = lo <= s.a ? s.a - (s.eA != null ? s.eA : W) : lo, b0 = hi >= s.b ? s.b + (s.eB != null ? s.eB : W) : hi;
+          if (b0 <= a0) continue;
+          cols.forEach((H, n) => {
+            if ((V ? H.x : H.y) !== s.c) return;
+            const ra = V ? H.r[2] : H.r[0], rb = V ? H.r[3] : H.r[1];
+            if (Math.min(rb, hi) >= Math.max(ra, lo)) colSel.add(n);
+          });
+          const a = lo <= s.a ? naka(s, s.a) ? s.a : a0 : lo, b = hi >= s.b ? naka(s, s.b) ? s.b : b0 : hi;
+          if (b <= a) continue;
+          if (!sel.has(s)) sel.set(s, []);
+          sel.get(s).push([a, b]);
+        }
+      }
+    }
+    const matome = (iv0) => iv0.sort((p, q) => p[0] - q[0]).reduce((o, r) => {
+      const t = o[o.length - 1];
+      if (t && r[0] <= t[1]) t[1] = Math.max(t[1], r[1]);
+      else o.push(r.slice());
+      return o;
+    }, []);
+    const nobe = (L) => L.reduce((t, [a, b]) => t + Math.max(0, b - a), 0);
+    const hiku = (parts, [ca, cb]) => parts.flatMap(([u, v]) => cb <= u || ca >= v ? [[u, v]] : [[u, Math.max(u, ca)], [Math.min(v, cb), v]].filter(([x, y]) => y - x > 0.5));
+    const G = /* @__PURE__ */ new Map(), kosaBasho = /* @__PURE__ */ new Set();
+    const tasu2 = (na, Wmm, Hmm, len, basho2) => {
+      if (len <= 0.5 || Hmm <= 0.5) return;
+      const key = na + "|" + Wmm + "|" + Math.round(Hmm);
+      if (!G.has(key)) G.set(key, { na, W: Wmm, H: Math.round(Hmm * 10) / 10, L: 0, v: 0, uchi: /* @__PURE__ */ new Map() });
+      const g = G.get(key);
+      g.L += len;
+      g.v += len * Wmm * Hmm / 1e9;
+      g.uchi.set(basho2, (g.uchi.get(basho2) || 0) + len);
+    };
+    const nagasa = { zentai: 0, hashira: 0, kosa: 0 };
+    for (const [s, iv0] of sel) {
+      const iv = matome(iv0);
+      nagasa.zentai += nobe(iv);
+      const basho2 = (s.V ? "X=" + s.c + " の Y" : "Y=" + s.c + " の X") + s.a + "〜" + s.b;
+      let parts = iv.map((r) => r.slice());
+      for (const H of cols) if ((s.V ? H.x : H.y) === s.c) parts = hiku(parts, s.V ? [H.r[2], H.r[3]] : [H.r[0], H.r[1]]);
+      nagasa.hashira += nobe(iv) - nobe(parts);
+      const mae = nobe(parts);
+      for (const o of segs) {
+        if (o.V === s.V) continue;
+        const oa = o.a - o.eA, ob = o.b + o.eB;
+        if (ob <= s.c - s.hw || oa >= s.c + s.hw) continue;
+        const band = [o.c - o.hw, o.c + o.hw], p0 = parts;
+        parts = hiku(parts, band);
+        if (nobe(p0) - nobe(parts) > 0.5) kosaBasho.add(s.V ? o.c + "," + s.c : s.c + "," + o.c);
+      }
+      nagasa.kosa += mae - nobe(parts);
+      const kiri = /* @__PURE__ */ new Set();
+      for (const d of s.dan || []) {
+        kiri.add(d.a);
+        kiri.add(d.b);
+      }
+      const dn = (s.dan || []).slice().sort((p, q) => p.a - q.a);
+      for (let k = 0; k + 1 < dn.length; k++) if (dn[k + 1].a > dn[k].b) kiri.add((dn[k].b + dn[k + 1].a) / 2);
+      for (const h of s.han || []) kiri.add(h.node + h.dirn * h.dd);
+      for (const [u, v] of parts) {
+        const T = [u, ...[...kiri].filter((t) => t > u && t < v).sort((x, y) => x - y), v];
+        for (let i = 0; i + 1 < T.length; i++) {
+          const m = (T[i] + T[i + 1]) / 2, len = T[i + 1] - T[i], top = M._topAt(s, m), soko = M._soko(s, m);
+          if (!s.hiro) tasu2("220幅", 220, top - soko, len, basho2);
+          else if (top <= s.kadan) tasu2("380幅", 380, top - soko, len, basho2);
+          else {
+            tasu2(s.wall.type === "low" ? "380幅の下段" : "380幅の下段(段違い)", 380, s.kadan - soko, len, basho2);
+            tasu2("増し打ち(220幅)", 220, top - s.kadan, len, basho2);
+          }
+        }
+      }
+    }
+    const gyo = [...G.values()].map((g) => ({
+      na: g.na,
+      L: g.L,
+      W: g.W,
+      H: g.H,
+      v: g.v,
+      uchiwake: [...g.uchi].map(([b, l]) => b + " " + (l / 1e3).toFixed(3) + "m")
+    }));
+    const HG = /* @__PURE__ */ new Map();
+    for (const n of colSel) {
+      const H = cols[n], h = H.top - H.bot, key = H.s + "|" + h;
+      if (!HG.has(key)) HG.set(key, { na: "柱 " + H.s + "角", W: H.s, D: H.s, H: h, n: 0 });
+      HG.get(key).n++;
+    }
+    const hashira = [...HG.values()].map((h) => ({ ...h, v: h.W * h.D * h.H * h.n / 1e9 }));
+    const shiki0 = gyo.reduce((t, g) => t + g.v, 0) + hashira.reduce((t, h) => t + h.v, 0);
+    const kv = K.tachi - shiki0;
+    return { nagasa, gyo, hashira, kosa: { n: kosaBasho.size, v: Math.abs(kv) < 5e-7 ? 0 : kv }, goukei: K.tachi, kotae: K.tachi };
+  }
+  const api = { junbi, tasu, tsuika, tsuikaBase, wakeru, keisan, warimashi, shiki, KIMARI };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Namakon = api;
 })(this);
@@ -4934,7 +5116,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       const T = [...ten].sort((a, b) => a - b);
       for (let k = 0; k + 1 < T.length; k++) {
         const a = T[k], b = T[k + 1], r = ngRiyu(s, (a + b) / 2, cols, dmp, sen, S);
-        const rect = s.V ? [s.c - W, s.c + W, a, b] : [a, b, s.c - W, s.c + W];
+        const w = s.hw || W, rect = s.V ? [s.c - w, s.c + w, a, b] : [a, b, s.c - w, s.c + w];
         if (r) ng.push([...rect, r]);
         else ok.push(rect);
       }
@@ -4957,7 +5139,8 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
             if (Math.abs(s.c - c) <= W && Math.min(hi, s.b) > Math.max(lo, s.a)) soi++;
             continue;
           }
-          if (!(s.c - W > lo && s.c + W < hi) || c < s.a || c > s.b) continue;
+          const w = s.hw || W;
+          if (!(s.c - w > lo && s.c + w < hi) || c < s.a || c > s.b) continue;
           const r = ngRiyu(s, c, cols, dmp, sen, S);
           kosa.push({ x: V ? c : s.c, y: V ? s.c : c, ok: !r, riyu: r });
         }
@@ -5508,7 +5691,50 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
 
 </script>
 <script>
-const HAN = 10;
+(function(root) {
+  const CHIKAI = 2;
+  const sen = (w) => {
+    const H = Math.abs(w.y1 - w.y2) < 0.5;
+    return { o: H ? "H" : "V", c: H ? w.y1 : w.x1, a: H ? Math.min(w.x1, w.x2) : Math.min(w.y1, w.y2), b: H ? Math.max(w.x1, w.x2) : Math.max(w.y1, w.y2) };
+  };
+  function nagasa(L) {
+    L = L.filter((l) => l.b - l.a > 0.5).sort((p, q) => p.o < q.o ? -1 : p.o > q.o ? 1 : p.c - q.c || p.a - q.a);
+    let sum = 0, t = null;
+    for (const l of L) {
+      if (t && t.o === l.o && Math.abs(t.c - l.c) < CHIKAI && l.a <= t.b) {
+        t.b = Math.max(t.b, l.b);
+        continue;
+      }
+      if (t) sum += t.b - t.a;
+      t = { ...l };
+    }
+    if (t) sum += t.b - t.a;
+    return sum;
+  }
+  function kasanari(l, K) {
+    const out = [];
+    for (const k of K) {
+      if (k.o !== l.o || Math.abs(k.c - l.c) >= CHIKAI) continue;
+      const a = Math.max(l.a, k.a), b = Math.min(l.b, k.b);
+      if (b - a > 0.5) out.push({ o: l.o, c: l.c, a, b });
+    }
+    return out;
+  }
+  function keisan(inp) {
+    const W = (inp && inp.walls || []).map((w) => ({ ...sen(w), type: w.type || "std" }));
+    const w220 = W.filter((w) => w.type === "std"), w380 = W.filter((w) => w.type !== "std");
+    const mashi = [...W.filter((w) => w.type === "step"), ...(inp && inp.tasu || []).filter((m) => !m.tomeDake).map(sen).flatMap((l) => kasanari(l, w380))];
+    const h220 = nagasa(w220), h380 = nagasa(w380);
+    return { zentai: nagasa(W), h220, h380, mashi220: nagasa(mashi) };
+  }
+  const api = { keisan, nagasa };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.Zencho = api;
+})(this);
+
+</script>
+<script>
+const HAN = 11;
 NamakonIriguchi.hanKimeru(HAN);
 document.getElementById("han").textContent = "版" + HAN;
 const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.min.mjs";
@@ -5614,10 +5840,41 @@ function show(R) {
     $("zu").innerHTML = '<p class="setsumei" style="padding:8px">原点と縮尺が決まらないので、図は描けません。</p>';
   }
   senInfo([]);
+  zentaiDasu(R);
   $("chuuiBox").innerHTML = R.chuui.length ? `<p style="margin:0;font-weight:700">注意(${R.chuui.length})</p><ul class="chuui">${R.chuui.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>` : '<p class="setsumei" style="color:var(--ok)">注意はありません。</p>';
   $("oshirase").innerHTML = R.oshirase.map((c) => `<li>${esc(c)}</li>`).join("");
   $("oshiraseBox").hidden = !R.oshirase.length;
   $("kekka").hidden = false;
+}
+function zentaiDasu(R) {
+  const Z = R.M && R.M.zentai;
+  if (!Z) {
+    $("zentaiBox").hidden = true;
+    return;
+  }
+  $("zentaiRyo").textContent = "合計 " + f3(Z.gokei) + " m³";
+  $("zentaiWari").innerHTML = `<tr><td>ベース</td><td>${f3(Z.base)} m³</td></tr><tr><td>立上り</td><td>${f3(Z.tachi)} m³</td><td style="color:var(--mute)">うち柱 ${f3(Z.hashira)}</td></tr>`;
+  $("zentaiMashi").textContent = Namakon.warimashi(Z.gokei, [3, 5, 7, 10]).map((w) => "+" + w.p + "% " + f3(w.v)).join("　");
+  $("zentaiBox").hidden = false;
+  zenchoDasu(R);
+}
+function zenchoDasu(R) {
+  let z = null;
+  try {
+    let tasu = [];
+    if (R.chizu && TenbaChizu.obiTasu) {
+      const t = TenbaChizu.obiTasu(R.chizu, R.k, R.kukan, {}, Takasa);
+      tasu = t && t.obi && t.obi[1] || [];
+    }
+    if ((R.k.walls || []).length) z = Zencho.keisan({ walls: R.k.walls, tasu });
+  } catch (e) {
+    console.warn(e);
+    z = null;
+  }
+  $("zencho").hidden = !z;
+  if (!z) return;
+  const m = (v) => (v / 1e3).toFixed(2) + " m";
+  $("zencho").innerHTML = [["立上りの全長", z.zentai, true], ["220幅", z.h220], ["380幅(下段だけ・段違い)", z.h380], ["増し打ち220(380幅の上。内訳)", z.mashi220]].map(([na, v, b]) => `<tr><td>${b ? "<b>" + na + "</b>" : na}</td><td style="text-align:right">${b ? "<b>" + m(v) + "</b>" : m(v)}</td></tr>`).join("");
 }
 let ZU = null;
 let YOTO = "tsuika";
@@ -5635,6 +5892,8 @@ function tsuikaKeisan(L) {
     if (ZU) ZU.nuru([]);
     return;
   }
+  $("bShiki").hidden = true;
+  $("shiki").hidden = true;
   if (SHU === "base") {
     const B = Namakon.tsuikaBase(M, L);
     ZU.nuru(B.shikaku);
@@ -5647,11 +5906,34 @@ function tsuikaKeisan(L) {
   }
   $("tsuikaMidashi").textContent = "追加分(なぞった立上り・柱。ベースは数えない)";
   const K = Namakon.tsuika(M, L);
+  $("bShiki").hidden = false;
+  shikiDasu(M, L, K);
   ZU.nuru(K.shikaku);
   $("tsuikaRyo").textContent = f3(K.tachi) + " m³";
   $("tsuikaWari").innerHTML = "<tr><td>うち 立上り</td><td>" + f3(K.kabe) + "</td><td>柱</td><td>" + f3(K.hashira) + "</td></tr>" + Namakon.warimashi(K.tachi, [3, 5, 7, 10]).map((w) => `<tr><td>+${w.p}%</td><td>${f3(w.v)} m³</td></tr>`).join("");
   $("tsuikaChuui").innerHTML = K.chuui.map((c) => `<li>${esc(c)}</li>`).join("");
   $("tsuikaBox").hidden = false;
+}
+let SHIKI_ON = false;
+$("bShiki").onclick = () => {
+  SHIKI_ON = !SHIKI_ON;
+  if (ZU) senInfo(ZU.sen());
+};
+const mStr = (v) => (v / 1e3).toFixed(3).replace(/\.?0+$/, "");
+function shikiDasu(M, L, K) {
+  $("bShiki").textContent = SHIKI_ON ? "計算式を閉じる" : "計算式を見る";
+  $("bShiki").setAttribute("aria-expanded", String(SHIKI_ON));
+  $("shiki").hidden = !SHIKI_ON;
+  if (!SHIKI_ON) return;
+  const F = Namakon.shiki(M, L, K), n = F.nagasa;
+  const h = [];
+  h.push(`<div class="ki">なぞった長さ ${(n.zentai / 1e3).toFixed(3)} m(うち柱の中 ${(n.hashira / 1e3).toFixed(3)} m・交わる所 ${(n.kosa / 1e3).toFixed(3)} m は下の別の行で数える)</div>`);
+  for (const g of F.gyo) h.push(`<div><div class="na">${esc(g.na)}</div><div class="shi">${(g.L / 1e3).toFixed(3)} m × ${mStr(g.W)} m × ${mStr(g.H)} m = ${f3(g.v)} m³</div><details><summary>内訳(区間ごとの長さ)</summary><div class="ki">${g.uchiwake.map(esc).join("<br>")}</div></details></div>`);
+  for (const c of F.hashira) h.push(`<div><div class="na">${esc(c.na)} ${c.n}本</div><div class="shi">${mStr(c.W)} m × ${mStr(c.D)} m × ${mStr(c.H)} m × ${c.n} = ${f3(c.v)} m³</div></div>`);
+  if (F.kosa.v) h.push(`<div><div class="na">交わる所 ${F.kosa.n}か所</div><div class="shi">${F.kosa.v > 0 ? "" : "−"}${f3(Math.abs(F.kosa.v))} m³</div><div class="ki">基礎どうしが重なる所。1か所はおよそ 幅×幅×高さ(220幅どうしなら 0.22×0.22×高さ)。高い方の天端・深い方の底で1回だけ数える</div></div>`);
+  h.push(`<div class="gokei">合計 ${f3(F.goukei)} m³(上の答えと同じ)</div>`);
+  if (!F.gyo.length && !F.hashira.length) h.length = 0, h.push('<div class="ki">なぞった立上りがありません</div>');
+  $("shiki").innerHTML = h.join("");
 }
 const IRO = ["#2f6fb0", "#d9772b", "#3f9a3a", "#8a4fb8", "#c23b6e", "#1f8a8a", "#8a7a1f", "#555"];
 function uchiwakeKeisan(L) {
@@ -5708,5 +5990,4 @@ $("bKesu1").onclick = () => ZU && ZU.kesu("1");
 $("bKesuAll").onclick = () => ZU && ZU.kesu("zenbu");
 </script>
 
-</body>
-</html>
+</body></html>
