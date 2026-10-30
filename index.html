@@ -52,6 +52,12 @@ h1 { font-size: 20px; margin: 0; text-wrap: balance; }
 .zu .hashi.kari { stroke: #e01e1e; }
 .zu .senNo.kari { fill: #e01e1e; }
 .kuruma { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.daisuBox { margin: 10px 0 6px; padding-top: 8px; border-top: 1px solid var(--line, #ddd); }   
+#insatsuHako { display: none; }   
+@media print { @page { size: A4 portrait; margin: 0; } html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; } body > *:not(#insatsuHako) { display: none !important; } #insatsuHako { display: block !important; } #insatsuHako img { width: 210mm; height: 296mm; display: block; } }   
+.hiUe { padding: 0 8px; font-size: 15px; margin-left: 4px; }   
+.daisuBox select { font-size: 15px; padding: 3px 4px; }
+.daisuBox .kuruma { margin: 6px 0; }
 .zu .nuri { fill: #e0742c; opacity: .45; }
 .zu .kOk { fill: #2e8b2e; opacity: .9; }
 .zu .kNg { fill: #d23c3c; opacity: .9; }
@@ -182,7 +188,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
           <li>区切りたい所の基礎を<b>押します</b>。指の上に拡大の丸が出て、区切りの線が見えます。</li>
           <li>押したまま動かすと、305ずつずれます。<b>指を離すと決まります</b>。</li>
           <li>引いた線を直したいときは、<b>その線の近くを押して</b>動かします。動かしている間は、図の札に量が出ます。</li>
-          <li>分かれた範囲ごとに番号と量が出ます。6Dで区切るときは「6Dでも区切る」を押します。</li>
+          <li>分かれた範囲ごとに「1日目・2日目…」と量が出ます。打つ順が違うときは、表の「↑」で前の日と入れ替えます。6Dで区切るときは「6Dでも区切る」を押します。</li>
           <li>エレベーターピット(図面の「標準詳細図参照」の所)は薄い赤の四角で出て、囲む基礎は区切れません。ピットでなければ「EVピット」のボタンで外せます。</li>
         </ol>
       </div>
@@ -199,12 +205,18 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   <section id="kekka" hidden>
     <div class="wrap">
       <p id="teimei"></p>
+      <div class="dougu" id="insatsuBtns"><button type="button" id="bPdf">PDFにする</button><button type="button" id="bInsatsu">印刷</button><span id="insatsuMsg" style="color:var(--mute)"></span></div>
       <div class="kekka2" id="zentaiBox" hidden>
         <div>全体の量(図面の全部)</div>
         <div class="ryo" id="zentaiRyo"></div>
         <table class="wari" id="zentaiWari"></table>
         <div class="wari" id="zentaiMashi" style="color:var(--mute)"></div>
         <div class="meyasuBasho"></div>
+        <div class="daisuBox" id="daisuBox">
+          <div>生コン車の台数</div>
+          <div class="dougu kuruma" id="kurumaBtns" role="group" aria-label="生コン車"></div>
+          <table class="wari" id="daisuHyo"></table>
+        </div>
         <table class="wari" id="zencho" hidden></table>
       </div>
       <div class="dougu" role="tablist" aria-label="使い道">
@@ -6177,6 +6189,210 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
 })(this);
 
 </script>
+<script>
+(function(root) {
+  const KURUMA = [{ id: "1.5", m3: 1.5, na: "1.5m³車" }, { id: "3.5", m3: 3.5, na: "3.5m³車(7・8トン)" }];
+  const WARI = [0, 3, 5, 7, 10];
+  const maru = (v) => Math.round(v * 1e3) / 1e3;
+  function hitotsu(kafusoku, p, m3) {
+    const ryo = maru(Math.max(0, kafusoku || 0) * (1 + p / 100));
+    const dai = ryo > 0 ? Math.ceil(ryo / m3 - 1e-9) : 0;
+    return { kafusoku: maru(kafusoku || 0), p, ryo, dai, saigo: dai ? maru(ryo - (dai - 1) * m3) : 0 };
+  }
+  function keisan(ryo, settei) {
+    const s = settei || {};
+    const kuruma = KURUMA.find((k) => k.id === String(s.kuruma)) || KURUMA[1];
+    const p = (v) => WARI.includes(Number(v)) ? Number(v) : 0;
+    const base = hitotsu(ryo.base, p(s.wariBase), kuruma.m3), tachi = hitotsu(ryo.tachi, p(s.wariTachi), kuruma.m3);
+    return { kuruma, base, tachi, ryo: maru(base.ryo + tachi.ryo), dai: base.dai + tachi.dai };
+  }
+  const api = { keisan, KURUMA, WARI };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.Daisu = api;
+})(this);
+
+</script>
+<script>
+(function(root) {
+  const A4 = { w: 210, h: 297 };
+  const FONT = '-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans CJK JP","Noto Sans JP","Yu Gothic",Meiryo,sans-serif';
+  const f3 = (v) => (v || 0).toFixed(3);
+  function kaku(cv, D, opt) {
+    const dpi = opt && opt.dpi || 150, s = dpi / 25.4;
+    const W = Math.round(A4.w * s), H = Math.round(A4.h * s);
+    cv.width = W;
+    cv.height = H;
+    const c = cv.getContext("2d");
+    const P = (v) => v * s;
+    const ji = (t, x, y2, mm, o) => {
+      o = o || {};
+      c.font = (o.b ? "700 " : "400 ") + P(mm) + "px " + FONT;
+      c.fillStyle = o.iro || "#000";
+      c.textAlign = o.al || "left";
+      c.textBaseline = "alphabetic";
+      c.fillText(t, P(x), P(y2));
+      return c.measureText(t).width / s;
+    };
+    const sen = (x0, y0, x1, y1, iro, w) => {
+      c.strokeStyle = iro || "#999";
+      c.lineWidth = P(w || 0.3);
+      c.beginPath();
+      c.moveTo(P(x0), P(y0));
+      c.lineTo(P(x1), P(y1));
+      c.stroke();
+    };
+    c.fillStyle = "#fff";
+    c.fillRect(0, 0, W, H);
+    const L = 12, R = A4.w - 12;
+    let y = 18;
+    const hiduke = (D.nichiji || "") + "　版" + (D.han || "");
+    c.font = "400 " + P(3.2) + "px " + FONT;
+    const hw = c.measureText(hiduke).width / s;
+    const tm = D.teimei || "(邸名が読めない)";
+    c.font = "700 " + P(7) + "px " + FONT;
+    const tw = c.measureText(tm).width / s;
+    ji(tm, L, y, Math.max(4, Math.min(7, 7 * (R - L - hw - 4) / tw)), { b: true });
+    ji(hiduke, R, y, 3.2, { al: "right", iro: "#444" });
+    y += 3;
+    sen(L, y, R, y, "#000", 0.5);
+    y += 7;
+    const Z = D.zentai || {};
+    ji("全体の量(図面の全部)", L, y, 4, { b: true });
+    ji("合計 " + f3(Z.gokei) + " m³", R, y, 6, { b: true, al: "right" });
+    y += 7;
+    ji("ベース", L + 2, y, 4);
+    ji(f3(Z.base) + " m³", L + 50, y, 4, { al: "right" });
+    ji("立上り", L + 62, y, 4);
+    ji(f3(Z.tachi) + " m³", L + 110, y, 4, { al: "right" });
+    ji("うち柱 " + f3(Z.hashira), L + 116, y, 3.4, { iro: "#555" });
+    y += 6;
+    ji((D.mashi || []).map((w) => "+" + w.p + "% " + f3(w.v)).join("　"), L + 2, y, 3.4, { iro: "#555" });
+    y += 4;
+    sen(L, y, R, y);
+    y += 7;
+    const K = D.daisu, hani = D.hani || [];
+    const wariMoji = (h) => h.p ? "+" + h.p + "%" : "過不足なし";
+    if (hani.length) {
+      ji("打ち分け(" + hani.length + "日)", L, y, 4, { b: true });
+      if (K) ji(K.kuruma.na + "・ベース " + wariMoji(K.base) + "・立上り " + wariMoji(K.tachi), R, y, 3.2, { al: "right", iro: "#555" });
+      y += 6.5;
+      const X = [L + 2, L + 44, L + 70, L + 96, L + 112];
+      ji("日", X[0], y, 3.4, { iro: "#555" });
+      ji("合計", X[1], y, 3.4, { iro: "#555", al: "right" });
+      ji("ベース", X[2], y, 3.4, { iro: "#555", al: "right" });
+      ji("立上り", X[3], y, 3.4, { iro: "#555", al: "right" });
+      if (K) ji("生コン車の台数", X[4], y, 3.4, { iro: "#555" });
+      y += 2;
+      sen(L, y, R, y);
+      y += 6;
+      for (const h of hani) {
+        c.fillStyle = h.iro;
+        c.fillRect(P(X[0]), P(y - 3.6), P(4), P(4));
+        ji(h.no + "日目", X[0] + 6, y, 4, { b: true });
+        ji(f3(h.gokei), X[1], y, 4, { b: true, al: "right" });
+        ji(f3(h.base), X[2], y, 4, { al: "right" });
+        ji(f3(h.tachi), X[3], y, 4, { al: "right" });
+        if (h.daisu) {
+          ji("ベース " + h.daisu.base.dai + "台・立上り " + h.daisu.tachi.dai + "台", X[4], y, 4.4, { b: true });
+          y += 4.6;
+          const g = (x) => f3(x.ryo) + "(最後 " + f3(x.saigo) + ")";
+          ji("割り増し後 ベース " + g(h.daisu.base) + "・立上り " + g(h.daisu.tachi), X[4], y, 2.9, { iro: "#555" });
+        }
+        y += 7.5;
+      }
+      y -= 3.5;
+      sen(L, y, R, y);
+      y += 7;
+    } else if (K) {
+      ji("生コン車の台数(" + K.kuruma.na + ")", L, y, 4, { b: true });
+      y += 7;
+      const gyo = (na, h) => {
+        ji(na, L + 2, y, 4);
+        ji(wariMoji(h), L + 22, y, 3.6, { iro: "#555" });
+        ji(f3(h.ryo) + " m³", L + 78, y, 4, { al: "right" });
+        ji(h.dai + "台", L + 100, y, 5.5, { b: true, al: "right" });
+        if (h.dai) ji("(最後の車 " + f3(h.saigo) + " m³)", L + 104, y, 3.4, { iro: "#555" });
+        y += 7.5;
+      };
+      gyo("ベース", K.base);
+      gyo("立上り", K.tachi);
+      ji("合計", L + 2, y, 4, { b: true });
+      ji(f3(K.ryo) + " m³", L + 78, y, 4, { b: true, al: "right" });
+      ji(K.dai + "台", L + 100, y, 5.5, { b: true, al: "right" });
+      y += 4;
+      sen(L, y, R, y);
+      y += 7;
+    }
+    if (D.zencho) {
+      const m = (v) => (v / 1e3).toFixed(2);
+      ji("立上りの全長 " + m(D.zencho.zentai) + " m", L, y, 4, { b: true });
+      ji("220幅 " + m(D.zencho.h220) + "・380幅(下段だけ・段違い) " + m(D.zencho.h380) + "・増し打ち220 " + m(D.zencho.mashi220), L + 58, y, 3.2, { iro: "#555" });
+      y += 4;
+      sen(L, y, R, y);
+      y += 7;
+    }
+    ji(hani.length ? "打ち分けの図" : "図面(打ち分けの区切りなし)", L, y, 4, { b: true });
+    y += 3;
+    zuKaku(c, s, { x0: L, x1: R, y0: y, y1: Math.max(y + 40, A4.h - 12) }, D, hani);
+    ji("量はm³(図面どおりの計算)。台数は画面で選んだ割り増しで出したもの。", L, A4.h - 7, 2.8, { iro: "#666" });
+    return { w: W, h: H };
+  }
+  const usuku = (hex) => {
+    const n = parseInt(hex.slice(1), 16), m = (v) => Math.round(v * 0.35 + 255 * 0.65);
+    return "rgb(" + m(n >> 16) + "," + m(n >> 8 & 255) + "," + m(n & 255) + ")";
+  };
+  function zuKaku(c, s, zu, D, hani) {
+    const m = D.masu;
+    if (!m || !m.n) return;
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (let t = 0; t < m.n; t++) {
+      x0 = Math.min(x0, m.x0[t]);
+      x1 = Math.max(x1, m.x1[t]);
+      y0 = Math.min(y0, m.y0[t]);
+      y1 = Math.max(y1, m.y1[t]);
+    }
+    const bw = (zu.x1 - zu.x0) * s, bh = (zu.y1 - zu.y0) * s;
+    const k = Math.min(bw / (x1 - x0), bh / (y1 - y0));
+    const ox = zu.x0 * s + (bw - (x1 - x0) * k) / 2, oy = zu.y0 * s + (bh - (y1 - y0) * k) / 2;
+    const X = (x) => ox + (x - x0) * k, Y = (y) => oy + (y1 - y) * k;
+    const iroOf = /* @__PURE__ */ new Map();
+    hani.forEach((h) => h.masu.forEach((t) => iroOf.set(t, h.iro)));
+    for (let t = 0; t < m.n; t++) {
+      const tachi = m.kabe[t] > 0 || m.hashira[t] > 0, iro = iroOf.get(t);
+      c.fillStyle = iro ? tachi ? iro : usuku(iro) : tachi ? "#8c8c8c" : "#d4d4d4";
+      c.fillRect(X(m.x0[t]), Y(m.y1[t]), (m.x1[t] - m.x0[t]) * k + 0.6, (m.y1[t] - m.y0[t]) * k + 0.6);
+    }
+    c.strokeStyle = "#e01e1e";
+    c.lineWidth = Math.max(2, 0.6 * s);
+    c.lineCap = "round";
+    for (const pts of D.sen || []) {
+      if (!pts || pts.length < 2) continue;
+      c.beginPath();
+      pts.forEach((p, i) => i ? c.lineTo(X(p[0]), Y(p[1])) : c.moveTo(X(p[0]), Y(p[1])));
+      c.stroke();
+    }
+    const r = 3.2 * s;
+    for (const h of hani) {
+      c.beginPath();
+      c.arc(X(h.cx), Y(h.cy), r, 0, 7);
+      c.fillStyle = "#fff";
+      c.fill();
+      c.lineWidth = 0.5 * s;
+      c.strokeStyle = h.iro;
+      c.stroke();
+      c.fillStyle = "#000";
+      c.font = "700 " + 3.8 * s + "px sans-serif";
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      c.fillText(String(h.no), X(h.cx), Y(h.cy));
+    }
+  }
+  const api = { kaku, A4 };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.InsatsuZu = api;
+})(this);
+
+</script>
 <template id="meyasuT"><details class="meyasu"><summary>何%多めに頼む？(目安)</summary>
   <dl>
     <dt>+3%</dt><dd>図面どおりに近く入る所。型枠がしっかりしていて、足りなければすぐ追加を頼めるとき。</dd>
@@ -6187,7 +6403,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   <p>多すぎると余った生コンの処分にお金がかかり、少なすぎると打ち継ぎになります。数はアプリの計算(図面どおり)なので、型枠のふくらみやこぼれは入っていません。この目安は決まった基準ではないので、現場の経験で選んでください。</p>
 </details></template>
 <script>
-const HAN = 19;
+const HAN = 20;
 NamakonIriguchi.hanKimeru(HAN);
 document.getElementById("han").textContent = "版" + HAN;
 const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.min.mjs";
@@ -6284,6 +6500,9 @@ $("bZumen").onclick = () => {
   $("bZumen").setAttribute("aria-pressed", String(on));
 };
 function show(R) {
+  UCHI = null;
+  JUN = null;
+  JUN_MSG = "";
   PIT_OFF = /* @__PURE__ */ new Set();
   pitBtnsKaku();
   $("teimei").textContent = R.name || "(邸名が読めない)";
@@ -6329,6 +6548,7 @@ function zentaiDasu(R) {
   $("zentaiWari").innerHTML = `<tr><td>ベース</td><td>${f3(Z.base)} m³</td></tr><tr><td>立上り</td><td>${f3(Z.tachi)} m³</td><td style="color:var(--mute)">うち柱 ${f3(Z.hashira)}</td></tr>`;
   $("zentaiMashi").textContent = Namakon.warimashi(Z.gokei, [3, 5, 7, 10]).map((w) => "+" + w.p + "% " + f3(w.v)).join("　");
   $("zentaiBox").hidden = false;
+  daisuDasu();
   zenchoDasu(R);
 }
 function zenchoDasu(R) {
@@ -6344,6 +6564,7 @@ function zenchoDasu(R) {
     console.warn(e);
     z = null;
   }
+  R.zencho = z;
   $("zencho").hidden = !z;
   if (!z) return;
   const m = (v) => (v / 1e3).toFixed(2) + " m";
@@ -6357,6 +6578,46 @@ function senInfo(L, info) {
   $("senInfo").textContent = L.length ? YOTO === "uchiwake" ? "区切り: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 長さ " + nagasa(l.pts) + "mm").join("、") + ")" : "なぞった線: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 " + l.pts.length + "点・長さ " + nagasa(l.pts) + "mm").join("、") + ")" : YOTO === "uchiwake" ? "打ち分けは、区切りたい基礎に指を置くと区切りの線(ベースの端までまっすぐ)が出ます。押したまま動かすと305ごとにずれ、指を離した所で決まります。引いた線の近くを押すと、その線をつかんで動かせます(動かしている間は図の札に量が出ます)。2本指で拡大・移動します。" : "「なぞる」の間は1本指でなぞり、指を離した所で線が切れます(基礎の芯の上を305ごとに吸い付く)。2本指で拡大・移動します。";
 }
 const f3 = (v) => v.toFixed(3);
+const DAISU_KEY = "namakon-daisu";
+let DS = { kuruma: "3.5", wariBase: 0, wariTachi: 0 };
+try {
+  const s = JSON.parse(localStorage.getItem(DAISU_KEY) || "null");
+  if (s && typeof s === "object") DS = Object.assign(DS, s);
+} catch (e) {
+}
+const daisuHozon = () => {
+  try {
+    localStorage.setItem(DAISU_KEY, JSON.stringify(DS));
+  } catch (e) {
+  }
+};
+const wariSel = (k, v) => `<select data-w="${k}" aria-label="${k === "wariBase" ? "ベース" : "立上り"}の割り増し">` + Daisu.WARI.map((p) => `<option value="${p}"${p === Number(v) ? " selected" : ""}>${p ? "+" + p + "%" : "過不足なし"}</option>`).join("") + `</select>`;
+const daiMoji = (h) => h.dai ? `<b>${h.dai}台</b> <span style="color:var(--mute)">(最後の車 ${f3(h.saigo)})</span>` : "<b>0台</b>";
+function daisuDasu() {
+  const Z = last && last.M && last.M.zentai;
+  if (!Z) return;
+  const D = Daisu.keisan(Z, DS);
+  $("kurumaBtns").innerHTML = Daisu.KURUMA.map((k) => `<button type="button" data-k="${k.id}" aria-pressed="${k.id === D.kuruma.id}">${k.na}</button>`).join("");
+  const gyo = (na, k, h) => `<tr><td>${na}</td><td>${wariSel(k, h.p)}</td></tr><tr><td></td><td>${f3(h.ryo)} m³ → ${daiMoji(h)}</td></tr>`;
+  $("daisuHyo").innerHTML = gyo("ベース", "wariBase", D.base) + gyo("立上り", "wariTachi", D.tachi) + `<tr><td><b>合計</b></td><td><b>${f3(D.ryo)} m³ → ${D.dai}台</b></td></tr>`;
+}
+function daisuKaeta() {
+  daisuHozon();
+  daisuDasu();
+  if (ZU && YOTO === "uchiwake") ZU.yoto(YOTO);
+}
+$("kurumaBtns").onclick = (e) => {
+  const b = e.target.closest("button[data-k]");
+  if (!b) return;
+  DS.kuruma = b.dataset.k;
+  daisuKaeta();
+};
+$("daisuHyo").onchange = (e) => {
+  const t = e.target;
+  if (!t.dataset || !t.dataset.w) return;
+  DS[t.dataset.w] = Number(t.value);
+  daisuKaeta();
+};
 let SHU = "tachi";
 function tsuikaKeisan(L) {
   const M = last && last.M;
@@ -6409,6 +6670,135 @@ function shikiDasu(M, L, K) {
   $("shiki").innerHTML = h.join("");
 }
 const IRO = ["#2f6fb0", "#d9772b", "#3f9a3a", "#8a4fb8", "#c23b6e", "#1f8a8a", "#8a7a1f", "#555"];
+let UCHI = null;
+let JUN = null;
+let JUN_MSG = "";
+const meJirushi = (h, m) => {
+  let best = h.masu[0], bd = Infinity;
+  for (const t of h.masu) {
+    const d = Math.hypot((m.x0[t] + m.x1[t]) / 2 - h.cx, (m.y0[t] + m.y1[t]) / 2 - h.cy);
+    if (d < bd) {
+      bd = d;
+      best = t;
+    }
+  }
+  return best;
+};
+function hiNarabe(W, L, kari) {
+  const n = W.hani.length, m = last.M.masu;
+  let jun = null;
+  if (JUN && JUN.length === n) {
+    const doko = JUN.map((t) => W.hani.findIndex((h) => h.masu.includes(t)));
+    if (doko.every((k) => k >= 0) && new Set(doko).size === n) jun = doko;
+  }
+  if (!jun) {
+    jun = [...Array(n).keys()];
+    if (!kari) {
+      if (JUN && JUN.irekae) JUN_MSG = "線が変わったので、日の順を左からに戻しました。打つ順が違うときは「↑」で入れ替えてください";
+    }
+  }
+  if (!kari) {
+    const iMae = JUN && JUN.irekae && jun.some((k, d) => k !== d);
+    JUN = jun.map((k) => meJirushi(W.hani[k], m));
+    JUN.irekae = !!iMae;
+  }
+  return jun.map((k, d) => ({ ...W.hani[k], k, no: d + 1, iro: IRO[d % IRO.length] }));
+}
+$("uchiwakeHyo").onclick = (e) => {
+  const b = e.target.closest("button[data-up]");
+  if (!b || !JUN) return;
+  const d = Number(b.dataset.up);
+  if (d < 1 || d >= JUN.length) return;
+  [JUN[d - 1], JUN[d]] = [JUN[d], JUN[d - 1]];
+  JUN.irekae = true;
+  JUN_MSG = "";
+  if (ZU && YOTO === "uchiwake") ZU.yoto(YOTO);
+};
+function insatsuData() {
+  const M = last && last.M, Z = M && M.zentai;
+  if (!Z) return null;
+  const hani = UCHI && UCHI.L.length ? hiNarabe(UCHI.W, UCHI.L).map((h) => ({ ...h, daisu: Daisu.keisan(h, DS) })) : [];
+  const d = /* @__PURE__ */ new Date(), z2 = (v) => String(v).padStart(2, "0");
+  return {
+    teimei: last.name,
+    nichiji: d.getFullYear() + "/" + z2(d.getMonth() + 1) + "/" + z2(d.getDate()) + " " + z2(d.getHours()) + ":" + z2(d.getMinutes()),
+    han: HAN,
+    zentai: Z,
+    mashi: Namakon.warimashi(Z.gokei, [3, 5, 7, 10]),
+    daisu: Daisu.keisan(Z, DS),
+    zencho: last.zencho || null,
+    masu: M.masu,
+    hani,
+    sen: hani.length ? UCHI.L.map((l) => l.pts) : []
+  };
+}
+function insatsuE() {
+  const D = insatsuData();
+  if (!D) {
+    $("insatsuMsg").textContent = "量が出ていないので、PDF・印刷は作れません";
+    return null;
+  }
+  const cv = document.createElement("canvas");
+  InsatsuZu.kaku(cv, D);
+  return { D, cv };
+}
+const fileMei = (D) => "生コン_" + String(D.teimei || "図面").replace(/[\\/:*?"<>|\s]+/g, "") + "_" + D.nichiji.slice(0, 10).replace(/\//g, "") + ".pdf";
+$("bPdf").onclick = async () => {
+  const E = insatsuE();
+  if (!E) return;
+  $("insatsuMsg").textContent = "PDFを作っています…";
+  try {
+    const PL = window.PDFLib, doc = await PL.PDFDocument.create();
+    const png = await doc.embedPng(E.cv.toDataURL("image/png"));
+    const pg = doc.addPage([595.28, 841.89]);
+    pg.drawImage(png, { x: 0, y: 0, width: 595.28, height: 841.89 });
+    const blob = new Blob([await doc.save()], { type: "application/pdf" }), na = fileMei(E.D);
+    const dl = window.claude && typeof window.claude.use === "function" ? await window.claude.use("downloads").catch(() => null) : null;
+    if (dl) {
+      try {
+        await dl.save({ filename: na, data: blob });
+        $("insatsuMsg").textContent = "PDFを保存しました(" + na + ")";
+      } catch (e) {
+        $("insatsuMsg").textContent = e && e.code === "declined" ? "保存をやめました" : "この画面ではPDFを保存できませんでした";
+      }
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = na;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 6e4);
+    $("insatsuMsg").textContent = "PDFの保存を始めました(" + na + ")。ダウンロードに無いときは、Chrome などのブラウザで開き直してください";
+  } catch (e) {
+    console.warn(e);
+    $("insatsuMsg").textContent = "PDFを作れませんでした。もう一度押してください";
+  }
+};
+$("bInsatsu").onclick = () => {
+  const E = insatsuE();
+  if (!E) return;
+  let hako = $("insatsuHako");
+  if (!hako) {
+    hako = document.createElement("div");
+    hako.id = "insatsuHako";
+    document.body.appendChild(hako);
+  }
+  const img = new Image();
+  img.alt = "印刷する1枚";
+  img.onload = () => {
+    setTimeout(() => window.print(), 50);
+  };
+  img.src = E.cv.toDataURL("image/png");
+  hako.replaceChildren(img);
+};
+const nw = (t) => `<span style="white-space:nowrap">${t}</span>`;
+const daiGyo = (h) => {
+  const D = Daisu.keisan(h, DS), g = (na, x) => nw(na + " <b>" + x.dai + "台</b>") + " " + nw("(" + f3(x.ryo) + "m³・最後の車 " + f3(x.saigo) + ")");
+  return `<tr><td></td><td colspan="2">${g("ベース", D.base)}<br>${g("立上り", D.tachi)}</td></tr>`;
+};
 function uchiwakeKeisan(L, info) {
   const ugo = !!(info && info.ugokashi);
   const M = last && last.M;
@@ -6418,17 +6808,18 @@ function uchiwakeKeisan(L, info) {
     return;
   }
   const W = Namakon.wakeru(M, L), C = Kugiri.kensa(M, last.damper, L, kugiriSettei());
-  const m = M.masu;
-  ZU.nuru(L.length ? W.hani.flatMap((h, k) => h.masu.map((t) => ({ r: [m.x0[t], m.x1[t], m.y0[t], m.y1[t]], iro: IRO[k % IRO.length] }))) : []);
+  UCHI = { L, W };
+  const m = M.masu, hi = hiNarabe(W, L, ugo);
+  ZU.nuru(L.length ? hi.flatMap((h) => h.masu.map((t) => ({ r: [m.x0[t], m.x1[t], m.y0[t], m.y1[t]], iro: h.iro }))) : []);
   ZU.fuda([
-    ...L.length ? W.hani.map((h) => ({ x: h.cx, y: h.cy, t: ugo ? h.no + "番 " + h.gokei.toFixed(2) + "m³" : String(h.no) })) : [],
+    ...L.length ? hi.map((h) => ({ x: h.cx, y: h.cy, t: ugo ? h.no + "日目 " + h.gokei.toFixed(2) + "m³" : String(h.no) })) : [],
     ...C.kosa.filter((k) => !k.ok).map((k) => ({ x: k.x, y: k.y, cls: "batsu" })),
     ...(W.senWake || []).map((w, i) => w.wakareta ? null : { x: (L[i].pts[0][0] + L[i].pts[L[i].pts.length - 1][0]) / 2, y: (L[i].pts[0][1] + L[i].pts[L[i].pts.length - 1][1]) / 2, t: "?" }).filter(Boolean)
   ]);
   const goukei = W.hani.reduce((s, h) => ({ base: s.base + h.base, tachi: s.tachi + h.tachi, gokei: s.gokei + h.gokei }), { base: 0, tachi: 0, gokei: 0 });
-  const gyo = (na, h, iro) => `<tr><td>${iro ? `<span style="display:inline-block;width:10px;height:10px;background:${iro};margin-right:4px"></span>` : ""}<b>${na}</b></td><td><b>${f3(h.gokei)} m³</b></td><td>ベース ${f3(h.base)}・立上り ${f3(h.tachi)}</td></tr><tr><td></td><td colspan="2" style="color:var(--mute)">${Namakon.warimashi(h.gokei, [3, 5, 7, 10]).map((w) => "+" + w.p + "% " + f3(w.v)).join("　")}</td></tr>`;
-  $("uchiwakeHyo").innerHTML = (L.length ? W.hani.map((h, k) => gyo(h.no + "番", h, IRO[k % IRO.length])).join("") : "") + gyo("全体", goukei, null);
-  $("uchiwakeChuui").innerHTML = [...L.length ? W.chuui : [], ...C.chuui].map((c) => `<li>${esc(c)}</li>`).join("");
+  const gyo = (na, h, iro) => `<tr><td>${iro ? `<span style="display:inline-block;width:10px;height:10px;background:${iro};margin-right:4px"></span>` : ""}<b>${na}</b>${h.no > 1 ? ` <button type="button" class="hiUe" data-up="${h.no - 1}" aria-label="${h.no}日目を${h.no - 1}日目と入れ替える">↑</button>` : ""}</td><td><b>${f3(h.gokei)} m³</b></td><td>ベース ${f3(h.base)}・立上り ${f3(h.tachi)}</td></tr><tr><td></td><td colspan="2" style="color:var(--mute)">${Namakon.warimashi(h.gokei, [3, 5, 7, 10]).map((w) => "+" + w.p + "% " + f3(w.v)).join("　")}</td></tr>` + daiGyo(h);
+  $("uchiwakeHyo").innerHTML = (L.length ? hi.map((h) => gyo(h.no + "日目", h, h.iro)).join("") : "") + gyo("全体", goukei, null);
+  $("uchiwakeChuui").innerHTML = [...JUN_MSG && L.length ? [JUN_MSG] : [], ...L.length ? W.chuui : [], ...C.chuui].map((c) => `<li>${esc(c)}</li>`).join("");
   $("uchiwakeBox").hidden = false;
 }
 function yotoKae(k) {
