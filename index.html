@@ -52,11 +52,13 @@ h1 { font-size: 20px; margin: 0; text-wrap: balance; }
 .zu .hashi.kari { stroke: #e01e1e; }
 .zu .senNo.kari { fill: #e01e1e; }
 .kuruma { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; }
-#jidouKekka { margin: 6px 0; padding: 8px; border: 2px solid #e01e1e; border-radius: 8px; }
 .zu .nuri { fill: #e0742c; opacity: .45; }
 .zu .kOk { fill: #2e8b2e; opacity: .9; }
 .zu .kNg { fill: #d23c3c; opacity: .9; }
-.zu svg.zumenAri .kOk, .zu svg.zumenAri .kNg { opacity: .55; }   
+.zu svg.zumenAri .kOk, .zu svg.zumenAri .kNg { opacity: .55; }
+.zu .kPit { fill: #d23c3c; fill-opacity: .1; stroke: #d23c3c; stroke-width: 40; stroke-dasharray: 120 80; }   
+.zu .kPitOff { fill: none; stroke: #888; stroke-width: 30; stroke-dasharray: 60 60; }
+.zu .kPitMoji { fill: #b01e1e; font-size: 260px; font-weight: 700; }   
 .zu .batsu { stroke: #b00; stroke-width: 5px; stroke-linecap: round; }
 .wari td:first-child { white-space: nowrap; }
 .zu .fudaMaru { fill: var(--panel); stroke: var(--fg); stroke-width: 20; }
@@ -124,7 +126,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
 </style>
 
 <div class="wrap">
-  <header><h1>生コンアプリ</h1><span class="hdrR"><button type="button" class="tsukaikata" id="bTebiki" aria-expanded="true" aria-controls="tebiki">使い方</button><span class="han" id="han">版16</span></span></header>
+  <header><h1>生コンアプリ</h1><span class="hdrR"><button type="button" class="tsukaikata" id="bTebiki" aria-expanded="true" aria-controls="tebiki">使い方</button><span class="han" id="han">版17</span></span></header>
 
 <section class="tebiki" id="tebiki" aria-labelledby="tebikiMidashi">
     <h2 id="tebikiMidashi">このアプリでできること</h2>
@@ -174,7 +176,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
           <li>区切りたい所の基礎を<b>押します</b>。指の上に拡大の丸が出て、区切りの線が見えます。</li>
           <li>押したまま動かすと、305ずつずれます。<b>指を離すと決まります</b>。</li>
           <li>分かれた範囲ごとに番号と量が出ます。6Dで区切るときは「6Dでも区切る」を押します。</li>
-          <li>2日に分けるときは、生コン車(1.5m³か3.5m³)を選んで「2日で打つ」を押すと、2日の差が車1台分に収まる分け方の中で区切りがいちばん少ないものを、赤い点線で仮に出します。線はいつもの区切りと同じように消したり足したりできます。</li>
+          <li>エレベーターピット(図面の「標準詳細図参照」の所)は薄い赤の四角で出て、囲む基礎は区切れません。ピットでなければ「EVピット」のボタンで外せます。</li>
         </ol>
       </div>
     </details>
@@ -226,15 +228,13 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         <div id="shiki" class="shiki" hidden></div>
       </div>
       <div class="dougu" id="uchiwakeSettei" hidden><button type="button" id="b6D" aria-pressed="false">6Dでも区切る</button>
-        <span class="kuruma">生コン車: <button type="button" id="bKuruma15" aria-pressed="false">1.5m³</button><button type="button" id="bKuruma35" aria-pressed="true">3.5m³(7〜8t)</button></span>
-        <button type="button" id="b2nichi">2日で打つ</button></div>
-      <div id="jidouKekka" hidden></div>
+        <span class="kuruma" id="pitBtns"></span></div>
       <div class="kekka2" id="uchiwakeBox" hidden>
         <div>打ち分け(区切りの線で分けた範囲ごと。ベース＋立上り)</div>
         <table class="wari" id="uchiwakeHyo"></table>
         <div class="meyasuBasho"></div>
         <ul class="chuui" id="uchiwakeChuui"></ul>
-        <div class="setsumei">図の帯: 緑＝区切れる所、赤＝区切れない所(柱から1220以内・ダンパーのある柱の区間・6Dとそこへ差し掛かるハンチ)。区切りは緑の上だけに置けます。6Dで区切る材料を用意したときは「6Dでも区切る」を押すと、6Dも緑になります。?＝その区切りでは範囲が分かれていない</div>
+        <div class="setsumei">図の帯: 緑＝区切れる所、赤＝区切れない所(柱から1220より近い所・柱と柱の間が2440以内・ダンパーのある柱の区間・6Dとそこへ差し掛かるハンチ・エレベーターピットを囲む基礎)。エレベーターピットは薄い赤の四角で、図面の「標準詳細図参照」の所を自動で見つけています。ピットでなければ「EVピット」のボタンを押して外せます。区切りは緑の上だけに置けます。6Dで区切る材料を用意したときは「6Dでも区切る」を押すと、6Dも緑になります。?＝その区切りでは範囲が分かれていない</div>
       </div>
       <p id="senInfo"></p>
       <details><summary>読み取りの確かめ</summary>
@@ -3413,6 +3413,46 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
 </script>
 <script>
 (function(root) {
+  const KIMARI = { MOJI: "標準詳細図参照", TOOI: 4e3, OOKISA: 3e3 };
+  function yomu(yomi, g, k) {
+    const chuui = [], pits = [];
+    if (!g || !g.k || !k || !k.walls) return { pits, chuui };
+    const mm = (x, y) => [(x - g.X0) * g.k, (g.Y0 - y) * g.k];
+    const ws = (yomi.words || []).filter((w) => w.t && w.t.replace(/\s/g, "") === KIMARI.MOJI);
+    for (const w of ws) {
+      const cs = w.ch && w.ch.length ? w.ch : null;
+      const [cx, cy] = cs ? mm((Math.min(...cs.map((c) => c.x0)) + Math.max(...cs.map((c) => c.x1))) / 2, (Math.min(...cs.map((c) => c.top)) + Math.max(...cs.map((c) => c.bottom))) / 2) : mm(w.x, w.y);
+      const V = k.walls.filter((s) => s.x1 === s.x2 && Math.min(s.y1, s.y2) <= cy && Math.max(s.y1, s.y2) >= cy).map((s) => s.x1);
+      const H = k.walls.filter((s) => s.y1 === s.y2 && Math.min(s.x1, s.x2) <= cx && Math.max(s.x1, s.x2) >= cx).map((s) => s.y1);
+      const L = Math.max(...V.filter((x) => x < cx && cx - x <= KIMARI.TOOI)), R = Math.min(...V.filter((x) => x > cx && x - cx <= KIMARI.TOOI));
+      const D = Math.max(...H.filter((y) => y < cy && cy - y <= KIMARI.TOOI)), U = Math.min(...H.filter((y) => y > cy && y - cy <= KIMARI.TOOI));
+      const basho = "(" + Math.round(cx) + "," + Math.round(cy) + ")";
+      if (![L, R, D, U].every(isFinite)) {
+        chuui.push("「" + KIMARI.MOJI + "」" + basho + " を囲む基礎が4本そろわない。エレベーターピットの範囲は図面で確かめる");
+        continue;
+      }
+      if (R - L > KIMARI.OOKISA || U - D > KIMARI.OOKISA) {
+        chuui.push("「" + KIMARI.MOJI + "」" + basho + " を囲む四角が大きすぎる(" + Math.round(R - L) + "×" + Math.round(U - D) + ")。エレベーターピットとしては扱わない。図面で確かめる");
+        continue;
+      }
+      const tooru = (tate, c, a, b) => k.walls.some((s) => tate ? s.x1 === s.x2 && s.x1 === c && Math.min(s.y1, s.y2) <= a + 1 && Math.max(s.y1, s.y2) >= b - 1 : s.y1 === s.y2 && s.y1 === c && Math.min(s.x1, s.x2) <= a + 1 && Math.max(s.x1, s.x2) >= b - 1);
+      if (!(tooru(true, L, D, U) && tooru(true, R, D, U) && tooru(false, D, L, R) && tooru(false, U, L, R)))
+        chuui.push("エレベーターピット" + basho + " の周りの基礎が、角から角まで続いていない所がある。図面で確かめる");
+      if (pits.some((p) => p.x0 === L && p.x1 === R && p.y0 === D && p.y1 === U)) continue;
+      pits.push({ x0: L, x1: R, y0: D, y1: U, cx: Math.round(cx), cy: Math.round(cy) });
+    }
+    if (!pits.length && !ws.length && (yomi.words || []).some((w) => w.t && w.t.replace(/\s/g, "").includes("標準詳細図") && !w.t.includes("※")))
+      chuui.push("「標準詳細図」の字はあるが、エレベーターピットが見つからない。図面で確かめる");
+    return { pits, chuui };
+  }
+  const api = { yomu, KIMARI };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.EvPit = api;
+})(this);
+
+</script>
+<script>
+(function(root) {
   const ZEN = ["K_10186", "K_3020", "K_10187", "K_3030", "K_5014", "寸法", "ML-床下換気孔", "ハンチ", "差し筋", "文言", "図面枠", "図面名称", "K_5010"];
   const USUI = ["K_10190", "K_3070", "アンカーボルト"];
   const GRAY_USUI = "0.6";
@@ -4160,6 +4200,14 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         }
       }
     }
+    let pits = [];
+    if (g.k && R.EvPit) try {
+      const P = R.EvPit.yomu(yomi, g, k);
+      pits = P.pits;
+      chuui.push(...P.chuui);
+    } catch (e) {
+      console.warn(e);
+    }
     let base = [];
     if (g.k) {
       const mm = ([x, y]) => [Math.round((x - g.X0) * g.k * 10) / 10, Math.round((g.Y0 - y) * g.k * 10) / 10];
@@ -4178,6 +4226,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       hanch,
       chizu,
       damper,
+      pits,
       base,
       baseAri,
       souAri: !!(yomi.sou && yomi.sou.ari),
@@ -5220,6 +5269,11 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
 (function(root) {
   const KIMARI = { HASHIRA_HANARE: 1220, W_HALF: 110, TOL: 152.5, DOWN_NG: 600 };
   function ngRiyu(s, u, cols, dmp, sen, S) {
+    for (const p of S.pits || []) {
+      const on = (v) => Math.abs(s.c - v) < 1;
+      const hen = s.V ? (on(p.x0) || on(p.x1)) && u >= p.y0 && u <= p.y1 : (on(p.y0) || on(p.y1)) && u >= p.x0 && u <= p.x1;
+      if (hen) return "エレベーターピット(ピットの中に水が入る打ち継ぎは作れない)";
+    }
     if (s.depth >= S.DOWN_NG) return "6D(区切る材料がない)";
     for (const h of s.han || []) {
       if (h.dp < S.DOWN_NG) continue;
@@ -5227,7 +5281,9 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       if (t >= 0 && t < h.Sn) return "6Dに差し掛かるハンチ(区切るのはハンチの始まり)";
     }
     const mine = cols.filter((H) => (s.V ? H.x : H.y) === s.c).map((H) => s.V ? H.y : H.x);
-    for (const p of mine) if (Math.abs(u - p) <= S.HASHIRA_HANARE) return "柱から1220以内";
+    const lo0 = Math.max(-Infinity, ...mine.filter((p) => p <= u)), hi0 = Math.min(Infinity, ...mine.filter((p) => p >= u));
+    if (isFinite(lo0) && isFinite(hi0) && hi0 - lo0 <= 2 * S.HASHIRA_HANARE) return "柱と柱の間が2440以内";
+    for (const p of mine) if (Math.abs(u - p) < S.HASHIRA_HANARE - 0.5) return "柱から1220以内";
     for (const d of dmp) {
       if (Math.abs((s.V ? d.x : d.y) - s.c) > S.TOL) continue;
       const dp = s.V ? d.y : d.x;
@@ -5256,6 +5312,16 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       for (const h of s.han || []) {
         tasu(h.node);
         tasu(h.node + h.dirn * h.Sn);
+      }
+      for (const p of S.pits || []) {
+        const on = (v) => Math.abs(s.c - v) < 1;
+        if (s.V && (on(p.x0) || on(p.x1))) {
+          tasu(p.y0);
+          tasu(p.y1);
+        } else if (!s.V && (on(p.y0) || on(p.y1))) {
+          tasu(p.x0);
+          tasu(p.x1);
+        }
       }
       for (const d of dmp) if (Math.abs((s.V ? d.x : d.y) - s.c) <= S.TOL) {
         for (const H of cols) if ((s.V ? H.x : H.y) === s.c) tasu(s.V ? H.y : H.x);
@@ -5384,133 +5450,6 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   const api = { junbi, erabu, zurasu, sen, KIMARI };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.KugiriSen = api;
-})(this);
-
-</script>
-<script>
-(function(root) {
-  const KIMARI = { MASU: 305, KURIKAESHI: 2, MIGAKU: 4, ZURE: 6 };
-  const KS = () => root.KugiriSen || (typeof require === "function" ? require("./kugiri-sen.js") : null);
-  const NK = () => root.Namakon || (typeof require === "function" ? require("./namakon.js") : null);
-  function kouho(J) {
-    const K = KS(), m = KIMARI.MASU, tachi = /* @__PURE__ */ new Map();
-    for (const s of J.segs) {
-      const L0 = [];
-      for (let u = Math.ceil((s.a + 1) / m) * m; u <= s.b - 1; u += m) {
-        const L = K.sen(J, { s, u });
-        if (!L.pts) continue;
-        const [p0, p1] = L.V ? [L.pts[0][1], L.pts[1][1]] : [L.pts[0][0], L.pts[1][0]];
-        const yoko = J.segs.filter((o) => o.V === s.V && o.c >= p0 && o.c <= p1 && u > o.a && u < o.b).map((o) => o.i);
-        L0.push({ u, pts: L.pts, yoko, key: L.pts.flat().join(",") });
-      }
-      tachi.set(s.i, L0);
-    }
-    return tachi;
-  }
-  function sagasu(J, settei) {
-    const Nk = NK(), M = J.M, kuruma = settei && settei.kuruma || 3.5, chuui = [];
-    const tachi = kouho(J), segs = J.segs;
-    if (![...tachi.values()].some((L) => L.length)) return { sen: [], chuui: ["区切れる所(緑)がないので、2日に分けられない"] };
-    const memo = /* @__PURE__ */ new Map();
-    const hakaru = (sen) => {
-      const key = sen.map((s) => s.key).sort().join("|");
-      if (memo.has(key)) return memo.get(key);
-      const mita = /* @__PURE__ */ new Set();
-      for (const s of sen) for (const i of s.yoko) {
-        if (mita.has(i)) {
-          memo.set(key, null);
-          return null;
-        }
-        mita.add(i);
-      }
-      const W2 = Nk.wakeru(M, sen.map((s) => ({ pts: s.pts })));
-      const r = W2.hani.length === 2 && W2.senWake.every((w) => w.wakareta) ? { sa: Math.abs(W2.hani[0].gokei - W2.hani[1].gokei) } : null;
-      memo.set(key, r);
-      return r;
-    };
-    const kazuOf = (sen) => sen.reduce((t, s) => t + s.yoko.length, 0);
-    const matome = (sen) => {
-      const out = [], mita = /* @__PURE__ */ new Set();
-      for (const s of sen) {
-        if (s.yoko.every((i) => mita.has(i))) continue;
-        s.yoko.forEach((i) => mita.add(i));
-        out.push(s);
-      }
-      return out;
-    };
-    const kekka = [];
-    const xs = segs.flatMap((s) => s.V ? [s.c] : [s.a, s.b]), ys = segs.flatMap((s) => s.V ? [s.a, s.b] : [s.c]);
-    for (const tate of [true, false]) {
-      const A = tate ? xs : ys, lo = Math.min(...A), hi = Math.max(...A), m = KIMARI.MASU;
-      for (let X = Math.ceil(lo / m) * m + m / 2; X < hi; X += m) {
-        const mata = segs.filter((s) => s.V !== tate && s.a < X && X < s.b);
-        if (!mata.length) continue;
-        const sen = [];
-        let dame = false;
-        for (const c of [...new Set(mata.map((s) => s.c))]) {
-          const L = segs.filter((o) => o.V !== tate && o.c === c).flatMap((o) => tachi.get(o.i) || []);
-          if (!L.length) {
-            dame = true;
-            break;
-          }
-          let b = L[0];
-          for (const q of L) if (Math.abs(q.u - X) < Math.abs(b.u - X)) b = q;
-          sen.push(b);
-        }
-        if (dame) continue;
-        const S = matome(sen), r = hakaru(S);
-        if (r) kekka.push({ sen: S, sa: r.sa, kazu: kazuOf(S) });
-      }
-    }
-    if (!kekka.length) return { sen: [], chuui: ["区切れる所(緑)だけでは、家を2つに分けられない"] };
-    kekka.sort((p, q) => p.kazu - q.kazu || p.sa - q.sa);
-    const kazuJun = [...new Set(kekka.map((r) => r.kazu))];
-    const migaku = (r) => {
-      let cur = r;
-      for (let it = 0; it < KIMARI.KURIKAESHI; it++) {
-        let kawatta = false;
-        for (let k = 0; k < cur.sen.length; k++) {
-          const s0 = cur.sen[k], seg = segs.find((o) => s0.yoko.includes(o.i) && (tachi.get(o.i) || []).some((c) => c.key === s0.key));
-          const L = seg ? segs.filter((o) => o.V === seg.V && o.c === seg.c).flatMap((o) => tachi.get(o.i) || []) : [];
-          let best = cur;
-          for (const c of L) {
-            if (c.key === s0.key || Math.abs(c.u - s0.u) > KIMARI.ZURE * KIMARI.MASU) continue;
-            const S = cur.sen.slice();
-            S[k] = c;
-            const kz = kazuOf(S);
-            if (kz > cur.kazu) continue;
-            const v = hakaru(S);
-            if (v && (kz < best.kazu || kz === best.kazu && v.sa < best.sa - 1e-9)) best = { sen: S, sa: v.sa, kazu: kz };
-          }
-          if (best !== cur) {
-            cur = best;
-            kawatta = true;
-          }
-        }
-        if (!kawatta) break;
-      }
-      return cur;
-    };
-    let erabi = null;
-    for (const kz of kazuJun) {
-      const R = kekka.filter((r) => r.kazu === kz).slice(0, KIMARI.MIGAKU).map(migaku);
-      const ok = R.filter((r) => r.sa <= kuruma + 1e-9).sort((p, q) => p.kazu - q.kazu || p.sa - q.sa);
-      if (ok.length) {
-        erabi = { ...ok[0], osamaru: true };
-        break;
-      }
-    }
-    if (!erabi) {
-      const R = kekka.slice().sort((p, q) => p.sa - q.sa).slice(0, KIMARI.MIGAKU * 2).map(migaku).sort((p, q) => p.sa - q.sa || p.kazu - q.kazu);
-      erabi = { ...R[0], osamaru: false };
-      chuui.push("2日の差が車1台分(" + kuruma + "m³)に収まる分け方が見つからない。いちばん均等な分け方を出した(差 " + erabi.sa.toFixed(2) + "m³)");
-    }
-    const W = Nk.wakeru(M, erabi.sen.map((s) => ({ pts: s.pts })));
-    return { sen: erabi.sen.map((s) => ({ pts: s.pts })), hani: W.hani, sa: erabi.sa, kazu: erabi.kazu, hon: erabi.sen.length, osamaru: erabi.osamaru, chuui };
-  }
-  const api = { sagasu, kouho, KIMARI };
-  if (typeof module !== "undefined" && module.exports) module.exports = api;
-  else root.JidouWake = api;
 })(this);
 
 </script>
@@ -6105,8 +6044,9 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         return yoto;
       },
       // 版7: 区切れる所(緑)・区切れない所(赤)の帯。Z = Kugiri.kimari の結果(null で消す)
+      // 版17: Z.pit = エレベーターピット [{x0,x1,y0,y1,no,off}](薄い赤の四角。外したものは灰色の点線)
       kimari: (Z) => {
-        kimariG.innerHTML = Z ? Z.ok.map((r) => `<rect x="${r[0]}" y="${T(r[3])}" width="${r[1] - r[0]}" height="${r[3] - r[2]}" class="kOk"/>`).join("") + Z.ng.map((r) => `<rect x="${r[0]}" y="${T(r[3])}" width="${r[1] - r[0]}" height="${r[3] - r[2]}" class="kNg"/>`).join("") : "";
+        kimariG.innerHTML = Z ? (Z.pit || []).map((p) => `<rect x="${p.x0}" y="${T(p.y1)}" width="${p.x1 - p.x0}" height="${p.y1 - p.y0}" class="${p.off ? "kPitOff" : "kPit"}"/>` + (p.off ? "" : `<text x="${(p.x0 + p.x1) / 2}" y="${T((p.y0 + p.y1) / 2)}" text-anchor="middle" dominant-baseline="middle" class="kPitMoji">EV</text>`)).join("") + Z.ok.map((r) => `<rect x="${r[0]}" y="${T(r[3])}" width="${r[1] - r[0]}" height="${r[3] - r[2]}" class="kOk"/>`).join("") + Z.ng.map((r) => `<rect x="${r[0]}" y="${T(r[3])}" width="${r[1] - r[0]}" height="${r[3] - r[2]}" class="kNg"/>`).join("") : "";
       },
       // 版7: 札(範囲の番号・区切れない所の印)。[{ x, y, t, cls }]
       fuda: (L) => {
@@ -6197,7 +6137,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   <p>多すぎると余った生コンの処分にお金がかかり、少なすぎると打ち継ぎになります。数はアプリの計算(図面どおり)なので、型枠のふくらみやこぼれは入っていません。この目安は決まった基準ではないので、現場の経験で選んでください。</p>
 </details></template>
 <script>
-const HAN = 16;
+const HAN = 17;
 NamakonIriguchi.hanKimeru(HAN);
 document.getElementById("han").textContent = "版" + HAN;
 const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.min.mjs";
@@ -6294,6 +6234,8 @@ $("bZumen").onclick = () => {
   $("bZumen").setAttribute("aria-pressed", String(on));
 };
 function show(R) {
+  PIT_OFF = /* @__PURE__ */ new Set();
+  pitBtnsKaku();
   $("teimei").textContent = R.name || "(邸名が読めない)";
   const rows = [
     ["通り芯", R.kazu.tori, R.kazu.tori >= 4],
@@ -6437,7 +6379,6 @@ function uchiwakeKeisan(L) {
   $("uchiwakeHyo").innerHTML = (L.length ? W.hani.map((h, k) => gyo(h.no + "番", h, IRO[k % IRO.length])).join("") : "") + gyo("全体", goukei, null);
   $("uchiwakeChuui").innerHTML = [...L.length ? W.chuui : [], ...C.chuui].map((c) => `<li>${esc(c)}</li>`).join("");
   $("uchiwakeBox").hidden = false;
-  jidouHyouji(L);
 }
 function yotoKae(k) {
   YOTO = k;
@@ -6449,75 +6390,49 @@ function yotoKae(k) {
   ZU.fuda([]);
   $("tsuikaBox").hidden = true;
   $("uchiwakeBox").hidden = true;
-  $("jidouKekka").hidden = true;
-  ZU.kimari(k === "uchiwake" && last && last.M ? Kugiri.kimari(last.M, last.damper, kugiriSettei()) : null);
+  kimariKaku();
   $("uchiwakeSettei").hidden = k !== "uchiwake";
   ZU.yoto(k);
 }
 $("bTsuika").onclick = () => yotoKae("tsuika");
 let ROKU_D = false;
-const kugiriSettei = () => ROKU_D ? { DOWN_NG: Infinity } : {};
+let PIT_OFF = /* @__PURE__ */ new Set();
+const pitsOn = () => (last && last.pits || []).filter((p, i) => !PIT_OFF.has(i));
+const kugiriSettei = () => Object.assign(ROKU_D ? { DOWN_NG: Infinity } : {}, { pits: pitsOn() });
+function kimariKaku() {
+  if (!ZU) return;
+  if (YOTO !== "uchiwake" || !last || !last.M) {
+    ZU.kimari(null);
+    return;
+  }
+  const Z = Kugiri.kimari(last.M, last.damper, kugiriSettei());
+  Z.pit = (last.pits || []).map((p, i) => ({ ...p, no: i + 1, off: PIT_OFF.has(i) }));
+  ZU.kimari(Z);
+}
+function pitBtnsKaku() {
+  const P = last && last.M && last.pits || [];
+  $("pitBtns").innerHTML = P.map((p, i) => `<button type="button" data-pit="${i}" aria-pressed="${!PIT_OFF.has(i)}">EVピット${P.length > 1 ? i + 1 : ""} ${PIT_OFF.has(i) ? "外した" : "区切らない"}</button>`).join("");
+}
+$("pitBtns").onclick = (ev) => {
+  const b = ev.target.closest("button[data-pit]");
+  if (!b) return;
+  const i = +b.dataset.pit;
+  if (PIT_OFF.has(i)) PIT_OFF.delete(i);
+  else PIT_OFF.add(i);
+  if (last && last.kugiriJ) last.kugiriJ.settei = kugiriSettei();
+  pitBtnsKaku();
+  kimariKaku();
+  if (ZU) senInfo(ZU.sen());
+};
 $("b6D").onclick = () => {
   ROKU_D = !ROKU_D;
   $("b6D").setAttribute("aria-pressed", String(ROKU_D));
-  JIDOU = null;
   if (last && last.kugiriJ) last.kugiriJ.settei = kugiriSettei();
   if (YOTO === "uchiwake" && ZU && last && last.M) {
-    ZU.kimari(Kugiri.kimari(last.M, last.damper, kugiriSettei()));
+    kimariKaku();
     senInfo(ZU.sen());
   }
 };
-let KURUMA = 3.5, JIDOU = null;
-function kurumaKae(v) {
-  KURUMA = v;
-  JIDOU = null;
-  $("jidouKekka").hidden = true;
-  $("bKuruma15").setAttribute("aria-pressed", String(v === 1.5));
-  $("bKuruma35").setAttribute("aria-pressed", String(v === 3.5));
-}
-$("bKuruma15").onclick = () => kurumaKae(1.5);
-$("bKuruma35").onclick = () => kurumaKae(3.5);
-const senKey = (L) => L.map((l) => l.pts.flat().join(",")).sort().join("|");
-$("b2nichi").onclick = () => {
-  if (!ZU || !last || !last.M || !last.kugiriJ || YOTO !== "uchiwake") return;
-  if (ZU.sen().length && !JIDOU && !confirm("今ある区切りの線を消して、2日で打つ仮の区切りに置き換えますか？")) return;
-  const b = $("b2nichi"), L0 = last;
-  b.disabled = true;
-  b.textContent = "探しています…";
-  setTimeout(() => {
-    let A = null;
-    try {
-      last.kugiriJ.settei = kugiriSettei();
-      A = JidouWake.sagasu(last.kugiriJ, { kuruma: KURUMA });
-    } catch (e) {
-      console.warn(e);
-      A = { sen: [], chuui: ["探している途中で止まった"] };
-    }
-    b.disabled = false;
-    b.textContent = "2日で打つ";
-    if (YOTO !== "uchiwake" || last !== L0) return;
-    const box = $("jidouKekka");
-    if (!A.sen.length) {
-      JIDOU = null;
-      box.innerHTML = "<b>2日の分け方が見つからない</b><br>" + A.chuui.map(esc).join("<br>");
-      box.hidden = false;
-      return;
-    }
-    JIDOU = { key: senKey(A.sen), A, kuruma: KURUMA };
-    ZU.oku(A.sen.map((s) => ({ pts: s.pts, kari: true })));
-  }, 30);
-};
-function jidouHyouji(L) {
-  const box = $("jidouKekka");
-  if (!JIDOU || YOTO !== "uchiwake" || senKey(L) !== JIDOU.key) {
-    if (JIDOU && senKey(L) !== JIDOU.key) JIDOU = null;
-    box.hidden = true;
-    return;
-  }
-  const A = JIDOU.A, h = A.hani;
-  box.innerHTML = `<b>2日で打つ(仮の区切り・赤い点線)</b><br>1日目 ${f3(h[0].gokei)} m³ ・ 2日目 ${f3(h[1].gokei)} m³ ・ 差 ${f3(A.sa)} m³<br>` + (A.osamaru ? `差は生コン車1台分(${JIDOU.kuruma}m³)以内。区切り ${A.kazu} か所(立上りを横切る数)` : `<span style="color:#c00">差が生コン車1台分(${JIDOU.kuruma}m³)に収まる分け方はない。いちばん均等な分け方(区切り ${A.kazu} か所)</span>`) + `<br><span style="color:var(--mute)">線を消す・足すと、下の表がその線で数え直されます(この枠は消えます)</span>`;
-  box.hidden = false;
-}
 function shuKae(k) {
   SHU = k;
   $("bTachi").setAttribute("aria-pressed", k === "tachi");
