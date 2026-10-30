@@ -175,6 +175,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
           <li>図の上の<b>「打ち分け」</b>を押します。緑は区切れる所、赤は区切れない所です。</li>
           <li>区切りたい所の基礎を<b>押します</b>。指の上に拡大の丸が出て、区切りの線が見えます。</li>
           <li>押したまま動かすと、305ずつずれます。<b>指を離すと決まります</b>。</li>
+          <li>引いた線を直したいときは、<b>その線の近くを押して</b>動かします。動かしている間は、図の札に量が出ます。</li>
           <li>分かれた範囲ごとに番号と量が出ます。6Dで区切るときは「6Dでも区切る」を押します。</li>
           <li>エレベーターピット(図面の「標準詳細図参照」の所)は薄い赤の四角で出て、囲む基礎は区切れません。ピットでなければ「EVピット」のボタンで外せます。</li>
         </ol>
@@ -5817,6 +5818,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     const ten = (p, cls) => `<line x1="${p[0]}" y1="${T(p[1])}" x2="${p[0]}" y2="${T(p[1])}" class="${cls}" ${ns}/>`;
     function kakuSen() {
       senG.innerHTML = senList.map((L, i) => {
+        if (ima && ima.tsukamu === i) return "";
         const k = L.kari ? " kari" : "";
         return `<polyline points="${pl(L.pts)}" class="sen${k}" ${ns}/>${ten(L.pts[0], "hashi" + k)}${ten(L.pts[L.pts.length - 1], "hashi" + k)}<text x="${L.pts[0][0]}" y="${T(L.pts[0][1]) - fs * 0.4}" font-size="${fs * 0.9}" class="senNo${k}" text-anchor="middle">${i + 1}</text>`;
       }).join("");
@@ -5881,6 +5883,27 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       kakuSen();
       if (opt.onSen) opt.onSen(senList);
     };
+    const ugokashiKeisan = () => {
+      if (!opt.onSen || !ima || ima.tsukamu == null) return;
+      const L = senList.map((l, i) => i === ima.tsukamu && ima.L.pts ? { pts: ima.L.pts } : l);
+      opt.onSen(L, { ugokashi: true });
+    };
+    function tsukamuSen(cx, cy) {
+      const r = svg.getBoundingClientRect();
+      if (!r.width) return -1;
+      const [x, y] = mm(cx, cy), lim = 24 * vb.w / r.width;
+      let best = -1, bd = lim;
+      senList.forEach((L, i) => {
+        if (!L.ku || L.pts.length < 2) return;
+        const [a, b] = [L.pts[0], L.pts[L.pts.length - 1]];
+        const d = a[0] === b[0] ? Math.hypot(x - a[0], Math.max(0, Math.min(a[1], b[1]) - y, y - Math.max(a[1], b[1]))) : Math.hypot(y - a[1], Math.max(0, Math.min(a[0], b[0]) - x, x - Math.max(a[0], b[0])));
+        if (d <= bd) {
+          bd = d;
+          best = i;
+        }
+      });
+      return best;
+    }
     const yubi = /* @__PURE__ */ new Map();
     let pinch = null, pan = null;
     const mm = (cx, cy) => {
@@ -5899,12 +5922,14 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       }
       yubi.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (yubi.size === 2) {
+        const t = ima && ima.tsukamu;
         ima = null;
         matsu = false;
         kakuIma();
         mushiKesu();
         pan = null;
         pinchHajime();
+        if (t != null) kawatta();
         return;
       }
       if (yubi.size > 2) return;
@@ -5913,9 +5938,18 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         return;
       }
       if (mode === "nazoru" && e.button === 0 && yoto === "uchiwake" && kugiriJ) {
-        const [x, y] = mm(e.clientX, e.clientY), k = KugiriSen.erabu(kugiriJ, x, y);
-        ima = k ? { kugiri: k, L: KugiriSen.sen(kugiriJ, k) } : null;
-        kakuIma();
+        const ti = tsukamuSen(e.clientX, e.clientY);
+        if (ti >= 0) {
+          const ku = senList[ti].ku;
+          ima = { kugiri: ku, L: { pts: senList[ti].pts, u: ku.u }, tsukamu: ti, moto: ku.u };
+          kakuSen();
+          kakuIma();
+          ugokashiKeisan();
+        } else {
+          const [x, y] = mm(e.clientX, e.clientY), k = KugiriSen.erabu(kugiriJ, x, y);
+          ima = k ? { kugiri: k, L: KugiriSen.sen(kugiriJ, k) } : null;
+          kakuIma();
+        }
         if (ima) {
           mushiDasu();
           mushiUgoku(e.clientX, e.clientY);
@@ -5949,8 +5983,15 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       } else if (ima && ima.kugiri) {
         const [x, y] = mm(e.clientX, e.clientY), k = KugiriSen.zurasu(kugiriJ, ima.kugiri, x, y);
         if (k.u !== ima.kugiri.u) {
+          const t = ima.tsukamu, mo = ima.moto;
           ima = { kugiri: k, L: KugiriSen.sen(kugiriJ, k) };
+          if (t != null) {
+            ima.tsukamu = t;
+            ima.moto = mo;
+            if (k.u === mo && !ima.L.pts) ima.L = { pts: senList[t].pts, u: mo };
+          }
           kakuIma();
+          if (t != null) ugokashiKeisan();
         }
         mushiUgoku(e.clientX, e.clientY);
       } else if (ima) {
@@ -5979,11 +6020,14 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         return;
       }
       if (ima && ima.kugiri) {
-        const L = ima.L;
+        const L = ima.L, k = ima.kugiri, t = ima.tsukamu;
         ima = null;
         kakuIma();
-        if (e.type === "pointerup" && L.pts) {
-          senList.push({ pts: L.pts });
+        if (t != null) {
+          if (e.type === "pointerup" && L.pts) senList[t] = { pts: L.pts, ku: k };
+          kawatta();
+        } else if (e.type === "pointerup" && L.pts) {
+          senList.push({ pts: L.pts, ku: k });
           kawatta();
         }
       } else if (ima) {
@@ -6050,7 +6094,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       },
       // 版7: 札(範囲の番号・区切れない所の印)。[{ x, y, t, cls }]
       fuda: (L) => {
-        fudaG.innerHTML = (L || []).map((f) => f.cls === "batsu" ? `<line x1="${f.x - fs * 0.5}" y1="${T(f.y) - fs * 0.5}" x2="${f.x + fs * 0.5}" y2="${T(f.y) + fs * 0.5}" class="batsu" ${ns}/><line x1="${f.x - fs * 0.5}" y1="${T(f.y) + fs * 0.5}" x2="${f.x + fs * 0.5}" y2="${T(f.y) - fs * 0.5}" class="batsu" ${ns}/>` : `<circle cx="${f.x}" cy="${T(f.y)}" r="${fs * 0.7}" class="fudaMaru"/><text x="${f.x}" y="${T(f.y) + fs * 0.35}" font-size="${fs}" class="fudaJi" text-anchor="middle">${esc(f.t)}</text>`).join("");
+        fudaG.innerHTML = (L || []).map((f) => f.cls === "batsu" ? `<line x1="${f.x - fs * 0.5}" y1="${T(f.y) - fs * 0.5}" x2="${f.x + fs * 0.5}" y2="${T(f.y) + fs * 0.5}" class="batsu" ${ns}/><line x1="${f.x - fs * 0.5}" y1="${T(f.y) + fs * 0.5}" x2="${f.x + fs * 0.5}" y2="${T(f.y) - fs * 0.5}" class="batsu" ${ns}/>` : (String(f.t).length > 2 ? `<rect x="${f.x - fs * (String(f.t).length * 0.32 + 0.4)}" y="${T(f.y) - fs * 0.7}" width="${fs * (String(f.t).length * 0.64 + 0.8)}" height="${fs * 1.4}" rx="${fs * 0.7}" class="fudaMaru"/>` : `<circle cx="${f.x}" cy="${T(f.y)}" r="${fs * 0.7}" class="fudaMaru"/>`) + `<text x="${f.x}" y="${T(f.y) + fs * 0.35}" font-size="${fs}" class="fudaJi" text-anchor="middle">${esc(f.t)}</text>`).join("");
       },
       // nuru は四角の一覧。[x0,x1,y0,y1] か { r:[…], iro: "#色" }
       nuru: (shikaku) => {
@@ -6137,7 +6181,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   <p>多すぎると余った生コンの処分にお金がかかり、少なすぎると打ち継ぎになります。数はアプリの計算(図面どおり)なので、型枠のふくらみやこぼれは入っていません。この目安は決まった基準ではないので、現場の経験で選んでください。</p>
 </details></template>
 <script>
-const HAN = 17;
+const HAN = 18;
 NamakonIriguchi.hanKimeru(HAN);
 document.getElementById("han").textContent = "版" + HAN;
 const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.min.mjs";
@@ -6301,10 +6345,10 @@ function zenchoDasu(R) {
 }
 let ZU = null;
 let YOTO = "tsuika";
-function senInfo(L) {
+function senInfo(L, info) {
   if (YOTO === "tsuika") tsuikaKeisan(L);
-  else uchiwakeKeisan(L);
-  $("senInfo").textContent = L.length ? YOTO === "uchiwake" ? "区切り: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 長さ " + nagasa(l.pts) + "mm").join("、") + ")" : "なぞった線: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 " + l.pts.length + "点・長さ " + nagasa(l.pts) + "mm").join("、") + ")" : YOTO === "uchiwake" ? "打ち分けは、区切りたい基礎に指を置くと区切りの線(ベースの端までまっすぐ)が出ます。押したまま動かすと305ごとにずれ、指を離した所で決まります。2本指で拡大・移動します。" : "「なぞる」の間は1本指でなぞり、指を離した所で線が切れます(基礎の芯の上を305ごとに吸い付く)。2本指で拡大・移動します。";
+  else uchiwakeKeisan(L, info);
+  $("senInfo").textContent = L.length ? YOTO === "uchiwake" ? "区切り: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 長さ " + nagasa(l.pts) + "mm").join("、") + ")" : "なぞった線: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 " + l.pts.length + "点・長さ " + nagasa(l.pts) + "mm").join("、") + ")" : YOTO === "uchiwake" ? "打ち分けは、区切りたい基礎に指を置くと区切りの線(ベースの端までまっすぐ)が出ます。押したまま動かすと305ごとにずれ、指を離した所で決まります。引いた線の近くを押すと、その線をつかんで動かせます(動かしている間は図の札に量が出ます)。2本指で拡大・移動します。" : "「なぞる」の間は1本指でなぞり、指を離した所で線が切れます(基礎の芯の上を305ごとに吸い付く)。2本指で拡大・移動します。";
 }
 const f3 = (v) => v.toFixed(3);
 let SHU = "tachi";
@@ -6359,7 +6403,8 @@ function shikiDasu(M, L, K) {
   $("shiki").innerHTML = h.join("");
 }
 const IRO = ["#2f6fb0", "#d9772b", "#3f9a3a", "#8a4fb8", "#c23b6e", "#1f8a8a", "#8a7a1f", "#555"];
-function uchiwakeKeisan(L) {
+function uchiwakeKeisan(L, info) {
+  const ugo = !!(info && info.ugokashi);
   const M = last && last.M;
   $("tsuikaBox").hidden = true;
   if (!M) {
@@ -6370,7 +6415,7 @@ function uchiwakeKeisan(L) {
   const m = M.masu;
   ZU.nuru(L.length ? W.hani.flatMap((h, k) => h.masu.map((t) => ({ r: [m.x0[t], m.x1[t], m.y0[t], m.y1[t]], iro: IRO[k % IRO.length] }))) : []);
   ZU.fuda([
-    ...L.length ? W.hani.map((h) => ({ x: h.cx, y: h.cy, t: String(h.no) })) : [],
+    ...L.length ? W.hani.map((h) => ({ x: h.cx, y: h.cy, t: ugo ? h.no + "番 " + h.gokei.toFixed(2) + "m³" : String(h.no) })) : [],
     ...C.kosa.filter((k) => !k.ok).map((k) => ({ x: k.x, y: k.y, cls: "batsu" })),
     ...(W.senWake || []).map((w, i) => w.wakareta ? null : { x: (L[i].pts[0][0] + L[i].pts[L[i].pts.length - 1][0]) / 2, y: (L[i].pts[0][1] + L[i].pts[L[i].pts.length - 1][1]) / 2, t: "?" }).filter(Boolean)
   ]);
