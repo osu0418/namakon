@@ -33,6 +33,9 @@ h1 { font-size: 20px; margin: 0; text-wrap: balance; }
 .ireru label { font-weight: 700; }
 .ireru input[type=file] { font-size: 15px; max-width: 100%; }
 #status { color: var(--mute); font-size: 14px; min-height: 1.4em; }
+.tomeru { border: 3px solid var(--warn); border-radius: 10px; padding: 12px 14px; color: var(--fg); font-size: 16px; }
+.tomeru b { display: block; color: var(--warn); font-size: 20px; margin-bottom: 6px; }
+.tomeru p { margin: 6px 0; }
 #teimei { font-size: 18px; font-weight: 700; margin: 0; }
 .teimeiGyo { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }   
 #zenchoMoji { font-family: var(--f-num); font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -51,6 +54,12 @@ h1 { font-size: 20px; margin: 0; text-wrap: balance; }
 .kazu td.n { font-family: var(--f-num); text-align: right; font-variant-numeric: tabular-nums; }
 .pill { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 99px; border: 1px solid currentColor; }
 .pill.ok { color: var(--ok); } .pill.ng { color: var(--warn); }
+.zuBox { position: relative; }   
+.pageObi { position: absolute; top: 0; right: 0; bottom: 0; width: 26px; z-index: 3; touch-action: pan-y; display: flex; align-items: center; justify-content: center;
+  background: rgba(150,160,155,.28); background: color-mix(in srgb, var(--line) 70%, transparent); color: var(--mute); font-size: 15px; border-radius: 0 10px 10px 0; user-select: none; -webkit-user-select: none; }
+.ukiDougu { position: absolute; left: 8px; right: 34px; bottom: 8px; z-index: 4; display: flex; gap: 6px; pointer-events: none; }
+.ukiDougu button { pointer-events: auto; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: 15px; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+.ukiDougu #uMode { font-weight: 700; }
 .zu { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .zu svg { display: block; width: 100%; height: 62vh; min-height: 320px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .zu svg.zumenAri { background: #fff; }   
@@ -223,7 +232,8 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         <button type="button" id="bKesuAll">全部消す</button>
         <button type="button" id="bZumen" aria-pressed="false" disabled>図面</button>
       </div>
-      <div class="zu" id="zu"></div>
+      <div class="zuBox"><div class="zu" id="zu"></div><div class="pageObi" id="pageObi" aria-hidden="true">↕</div>
+        <div class="ukiDougu" id="ukiDougu" hidden><button type="button" id="uMode">✋ 動かす</button><button type="button" id="uKesu1">1本消す</button><button type="button" id="uShita" aria-label="下の量の所へ">▼</button></div></div>
       <p class="setsumei" id="zumenInfo"></p>
       <div class="kekka2" id="tsuikaBox" hidden>
         <div id="tsuikaMidashi">追加分(なぞった立上り・柱。ベースは数えない)</div>
@@ -6524,8 +6534,8 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     { e: "ireru", k: "図面を入れる", s: "茶色のボタンで、図面を選ぶ", btn: ["zumen", "図面の保存の仕方"] },
     { e: "ryo", k: "生コンの量が出る", s: "▼で、何%多めか選ぶ" },
     { e: "daisu", k: "生コン車の台数", s: "何台いるか、すぐ分かる" },
-    { e: "tsuika", k: "足りない分(追加分)", s: "残りの基礎を、指でなぞる" },
-    { e: "uchiwake", k: "何日かに分けて打つ", s: "区切る所を押して、指をはなす" },
+    { e: "tsuika", k: "足りない分(追加分)", s: "「✋ 動かす」を「✏ なぞる」にして、残りの基礎をなぞる" },
+    { e: "uchiwake", k: "何日かに分けて打つ", s: "「✋ 動かす」を「✏ 区切る」にして、区切る所を押す" },
     { e: "kami", k: "紙にする", s: "「PDFにする」か「印刷」を押す" },
     { e: "home", k: "次から早く開く", s: "携帯の画面に置いておく", btn: ["home", "置き方"] }
   ];
@@ -6641,10 +6651,10 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   const SHOSAI = [
     ["① 割り増しの選び方", ["ベース・立上りの横の「▼」を押す", "何%多めにするか選ぶ"]],
     ["② 台数の見方", ["車(1.5か3.5)を押す", "打ち分けがあれば、日ごとに出る"]],
-    ["③ 追加分の出し方", ["「追加分」「なぞる」を押す", "立上りかベースかも選ぶ", "残りの基礎を指でなぞる", "やり直すときは「1本消す」"]],
-    ["④ 打ち分けの出し方", ["「打ち分け」を押す", "緑の所を押す。赤は区切れない", "区切りたい向きへ指を動かす", "指をはなすと決まる", "線の近くを押すと、動かせる", "日の順は「↑」で入れ替え", "6Dで区切るときは「6Dでも区切る」"]],
+    ["③ 追加分の出し方", ["「追加分」を押す", "図の左下の「✋ 動かす」を押して「✏ なぞる」にする", "立上りかベースかも選ぶ", "残りの基礎を指でなぞる", "やり直すときは「1本消す」"]],
+    ["④ 打ち分けの出し方", ["「打ち分け」を押す", "図の左下の「✋ 動かす」を押して「✏ 区切る」にする", "緑の所を押す。赤は区切れない", "区切りたい向きへ指を動かす", "指をはなすと決まる", "線の近くを押すと、動かせる", "日の順は「↑」で入れ替え", "6Dで区切るときは「6Dでも区切る」"]],
     ["⑤ PDF・印刷", ["「PDFにする」か「印刷」を押す"]],
-    ["図の見方", ["2本の指で広げると大きくなる", "「動かす」を押すと1本の指で動かせる", "邸名の下の「詳細」で、全長とベースの式"]]
+    ["図の見方", ["2本の指で広げると大きくなる", "はじめは1本の指で動かせる(✋ 動かす)", "右の「↕」の帯をなぞると、ページが上下に動く", "邸名の下の「詳細」で、全長とベースの式"]]
   ];
   function ichiran(hako) {
     hako.innerHTML = `<h2>このアプリでできること</h2>` + KA.map((k) => `<div class="icKa">${svg(E[k.e])}<div><b>${k.na}</b><span>${k.s}</span></div></div>`).join("") + `<h2>はじめ方</h2><div class="icKa">${svg(E.ireru)}<div><b>茶色のボタンを押す</b><span>保存した図面を選ぶ</span></div></div><details class="icShosai" data-shu="zumen"><summary>LINEの図面の保存の仕方<span class="shosai" aria-hidden="true"></span></summary><div class="icHozon"></div></details><details class="icShosai" data-shu="home"><summary>アプリを携帯の画面に置く<span class="shosai" aria-hidden="true"></span></summary><div class="icHozon"></div></details><h2>使い方</h2>` + SHOSAI.map(([na, L]) => `<details class="icShosai"><summary>${na}<span class="shosai" aria-hidden="true"></span></summary><ol class="tejun">${L.map((l) => `<li>${l}</li>`).join("")}</ol></details>`).join("");
@@ -6712,7 +6722,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   <p>多すぎると余った生コンの処分にお金がかかり、少なすぎると打ち継ぎになります。数はアプリの計算(図面どおり)なので、型枠のふくらみやこぼれは入っていません。この目安は決まった基準ではないので、現場の経験で選んでください。</p>
 </details></template>
 <script>
-const HAN = 22;
+const HAN = 23;
 NamakonIriguchi.hanKimeru(HAN);
 document.getElementById("han").textContent = "版" + HAN;
 const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.min.mjs";
@@ -6765,6 +6775,22 @@ async function run(file) {
     const data = new Uint8Array(await file.arrayBuffer());
     const kagi = SenKioku.kagi(data);
     last = await NamakonIriguchi.yomu(await loadPdfjs(), window.PDFLib, data);
+    if (!last.souAri) {
+      $("status").innerHTML = `<div class="tomeru"><b>この図面では生コンの量を出せません</b><p>線の情報(レイヤー)が入っていない図面です(iPhoneの印刷などで作り直したもの・古い形で出したものなど)。ベースの形が読めず、量が大きく少なく出ます。</p><p>CADから出した元のPDFを入れてください。</p></div>`;
+      if (zumenDoc) {
+        try {
+          zumenDoc.destroy();
+        } catch (e) {
+        }
+        zumenDoc = null;
+      }
+      if (ZU && ZU.kataduke) ZU.kataduke();
+      last = null;
+      ZU = null;
+      UCHI = null;
+      ukiDouguKaku();
+      return;
+    }
     $("status").textContent = "量を数える準備中… " + file.name;
     await new Promise((r) => setTimeout(r, 30));
     last.M = last.g.k && last.kukan.length ? Namakon.junbi({ kukan: last.kukan, hanch: last.hanch, cols: last.k.cols, walls: last.k.walls, chizu: last.chizu, shapes: BaseKatachi.katachi(last.base).shapes, souAri: last.souAri }) : null;
@@ -6851,12 +6877,12 @@ function show(R) {
       ZU.kugiri(R.kugiriJ = KugiriSen.junbi(R.M, R.damper));
       R.kugiriJ.settei = kugiriSettei();
     }
-    modeKae("nazoru");
     yotoKae(YOTO);
   } else {
     ZU = null;
     $("zu").innerHTML = '<p class="setsumei" style="padding:8px">原点と縮尺が決まらないので、図は描けません。</p>';
   }
+  ukiDouguKaku();
   senInfo([]);
   zentaiDasu(R);
   senModosu(R);
@@ -6955,7 +6981,7 @@ let YOTO = "tsuika";
 function senInfo(L, info) {
   if (YOTO === "tsuika") tsuikaKeisan(L);
   else uchiwakeKeisan(L, info);
-  $("senInfo").textContent = L.length ? YOTO === "uchiwake" ? "区切り: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 長さ " + nagasa(l.pts) + "mm").join("、") + ")" : "なぞった線: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 " + l.pts.length + "点・長さ " + nagasa(l.pts) + "mm").join("、") + ")" : YOTO === "uchiwake" ? "打ち分けは、区切りたい基礎に指を置くと区切りの線(ベースの端までまっすぐ)が出ます。押したまま動かすと305ごとにずれ、指を離した所で決まります。引いた線の近くを押すと、その線をつかんで動かせます(動かしている間は図の札に量が出ます)。2本指で拡大・移動します。" : "「なぞる」の間は1本指でなぞり、指を離した所で線が切れます(基礎の芯の上を305ごとに吸い付く)。2本指で拡大・移動します。";
+  $("senInfo").textContent = L.length ? YOTO === "uchiwake" ? "区切り: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 長さ " + nagasa(l.pts) + "mm").join("、") + ")" : "なぞった線: " + L.length + "本(" + L.map((l, i) => i + 1 + "本目 " + l.pts.length + "点・長さ " + nagasa(l.pts) + "mm").join("、") + ")" : YOTO === "uchiwake" ? "打ち分けは、図の左下の「✋ 動かす」を押して「✏ 区切る」にしてから、区切りたい基礎に指を置くと区切りの線(ベースの端までまっすぐ)が出ます。押したまま動かすと305ごとにずれ、指を離した所で決まります。引いた線の近くを押すと、その線をつかんで動かせます(動かしている間は図の札に量が出ます)。2本指で拡大・移動します。" : "図の左下の「✋ 動かす」を押して「✏ なぞる」にすると、1本指でなぞれます。「なぞる」の間は1本指でなぞり、指を離した所で線が切れます(基礎の芯の上を305ごとに吸い付く)。2本指で拡大・移動します。";
 }
 const f3 = (v) => v.toFixed(3);
 const DAISU_KEY = "namakon-daisu";
@@ -7222,6 +7248,7 @@ function yotoKae(k) {
   kimariKaku();
   $("uchiwakeSettei").hidden = k !== "uchiwake";
   ZU.yoto(k);
+  modeKae("idou");
 }
 $("bTsuika").onclick = () => yotoKae("tsuika");
 let ROKU_D = false;
@@ -7277,7 +7304,22 @@ function modeKae(m) {
   ZU.mode(m);
   $("bNazoru").setAttribute("aria-pressed", m === "nazoru");
   $("bIdou").setAttribute("aria-pressed", m === "idou");
+  ukiDouguKaku();
 }
+function ukiDouguKaku() {
+  $("ukiDougu").hidden = !ZU;
+  $("pageObi").hidden = !ZU;
+  if (!ZU) return;
+  const m = ZU.mode();
+  $("uMode").textContent = m === "idou" ? "✋ 動かす" : YOTO === "uchiwake" ? "✏ 区切る" : "✏ なぞる";
+  $("uMode").setAttribute("aria-label", (m === "idou" ? "今は動かす" : "今は" + (YOTO === "uchiwake" ? "区切る" : "なぞる")) + "。押すと切り替え");
+}
+$("uMode").onclick = () => ZU && modeKae(ZU.mode() === "idou" ? "nazoru" : "idou");
+$("uKesu1").onclick = () => $("bKesu1").click();
+$("uShita").onclick = () => {
+  const b = [$("tsuikaBox"), $("uchiwakeBox")].find((e) => !e.hidden) || $("zumenInfo");
+  b.scrollIntoView({ block: "start", behavior: "smooth" });
+};
 $("bNazoru").onclick = () => modeKae("nazoru");
 $("bIdou").onclick = () => modeKae("idou");
 $("bZentai").onclick = () => ZU && ZU.zentai();
