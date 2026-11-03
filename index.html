@@ -2067,6 +2067,13 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
           }
         }
         const yoko = hon.filter((q) => q.V !== h.V && h.c >= q.a - 150 && h.c <= q.b + 150);
+        for (const q of yoko.filter((q2) => Math.abs(q2.c - v) <= 250).sort((p, r) => Math.abs(p.c - v) - Math.abs(r.c - v))) {
+          if (q.a < h.c - 300 && q.b > h.c + 300) continue;
+          if (Math.min(Math.abs(q.a - h.c), Math.abs(q.b - h.c)) > 250) continue;
+          const dq = (q.a + q.b) / 2 > h.c ? 1 : -1;
+          if (h.sg === -dq && q.sg === side) return h.V ? q.c + q.sg * 110 : q.c + q.sg * 10;
+          if (h.sg === dq && q.sg === -side) return h.V ? q.c + q.sg * 10 : q.c + q.sg * 110;
+        }
         if (h.V) {
           const q = yoko.map((q2) => q2.c + q2.sg * 10).filter((f2) => Math.abs(f2 - v) <= (lay ? 60 : 150)).sort((p, r) => Math.abs(p - v) - Math.abs(r - v))[0];
           if (q != null) return q;
@@ -2652,7 +2659,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     }
     const xs = cols.map((c) => c.x), ys = cols.map((c) => c.y);
     const naka = (x, y) => !cols.length || x >= Math.min(...xs) - 2500 && x <= Math.max(...xs) + 2500 && y >= Math.min(...ys) - 2500 && y <= Math.max(...ys) + 2500;
-    const boltBasho = /* @__PURE__ */ new Set();
+    const boltBasho = /* @__PURE__ */ new Set(), boltMaru = /* @__PURE__ */ new Map();
     for (const t of tamaB) {
       if (!naka(t.x, t.y)) continue;
       const b = basho.find((B) => Math.hypot(B.x - t.x, B.y - t.y) < MARU / 2);
@@ -2661,7 +2668,9 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         continue;
       }
       boltBasho.add(b);
-      out.bolt.push({ x: r5(t.x), y: r5(t.y), naga: null, kumi: null });
+      const bo = { x: r5(t.x), y: r5(t.y), naga: null, kumi: null };
+      out.bolt.push(bo);
+      boltMaru.set(bo, b);
     }
     const mm = (n) => ({ ...n, x: (n.x - X0) * k, y: (Y0 - n.y) * k });
     const gw = groupWordsFn();
@@ -2704,7 +2713,8 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       const c = out.bolt[best.j];
       tsukatta.add(i);
       tsukatta.add(best.j);
-      const x = r5((b.x + c.x) / 2), y = r5((b.y + c.y) / 2), n = out.damper.length;
+      const mb = boltMaru.get(b), mc = boltMaru.get(c);
+      const x = r5((mb.x + mc.x) / 2), y = r5((mb.y + mc.y) / 2), n = out.damper.length;
       b.kumi = n;
       c.kumi = n;
       const naga = b.naga === c.naga ? b.naga : null;
@@ -2848,7 +2858,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     const ws = yomi && yomi.words || [];
     const chukiTenba = (t) => {
       const s = String(t || "").normalize("NFKC");
-      let m = /天端\s*[:：]?\s*Z0\s*[-−ー]\s*(\d+)/.exec(s);
+      let m = /天端\s*(?:H\s*=)?\s*[:：]?\s*Z0\s*[-−ー]\s*(\d+)/.exec(s);
       if (m) return -Number(m[1]);
       m = /Z(0?)\s*[-−ー]\s*(\d+)\s*まで\s*増し打ち/.exec(s);
       if (m) return m[1] ? -Number(m[2]) : -(Number(m[2]) + 50);
@@ -2861,6 +2871,68 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         kirikaki.push({ t: s.replace(/^※/, ""), x: Math.round(p[0]), y: Math.round(p[1]) });
       }
     }
+    const KAGI_TOL = 120, KAGI_JI = 1e3, HALF_K = { std: 110, step: 110, low: 190 };
+    const kagiHani = (p, tenba, t) => {
+      const cols2 = kiso && kiso.cols || [];
+      let best = null;
+      for (const q of yomi.paths || []) {
+        if (q.closed || q.curve || q.dash || q.pts.length !== 4) continue;
+        const P = q.pts.map((t2) => mmW({ x: t2[0], y: t2[1] }));
+        const yk = Math.abs(P[1][1] - P[2][1]) < 3, tate = Math.abs(P[1][0] - P[2][0]) < 3;
+        if (yk === tate) continue;
+        const al = (v) => yk ? v[0] : v[1], pe = (v) => yk ? v[1] : v[0];
+        const naga = Math.abs(al(P[2]) - al(P[1]));
+        if (naga < 300) continue;
+        const hashi = [[P[0], P[1]], [P[3], P[2]]];
+        if (hashi.some(([u, v]) => Math.hypot(u[0] - v[0], u[1] - v[1]) > 300 || Math.abs(al(u) - al(v)) < 20 || Math.abs(pe(u) - pe(v)) < 20)) continue;
+        const sen = pe(P[1]);
+        const hw = (x) => HALF_K[x.type || "std"] || 110;
+        const w = walls.filter((w2) => w2.y1 === w2.y2 === yk && (() => {
+          const c2 = yk ? w2.y1 : w2.x1, d2 = Math.abs(sen - c2);
+          const lo = Math.min(yk ? w2.x1 : w2.y1, yk ? w2.x2 : w2.y2), hi = Math.max(yk ? w2.x1 : w2.y1, yk ? w2.x2 : w2.y2);
+          return d2 >= 120 && d2 <= 400 && hashi.every(([u]) => Math.abs(pe(u) - c2) < d2 && Math.abs(Math.abs(pe(u) - c2) - hw(w2)) <= 80) && Math.min(al(P[0]), al(P[3])) >= lo - 300 && Math.max(al(P[0]), al(P[3])) <= hi + 300;
+        })()).sort((u, v) => Math.abs(sen - (yk ? u.y1 : u.x1)) - Math.abs(sen - (yk ? v.y1 : v.x1)))[0];
+        if (!w) continue;
+        const c = yk ? w.y1 : w.x1;
+        const lo0 = Math.min(al(P[1]), al(P[2])), hi0 = Math.max(al(P[1]), al(P[2]));
+        const ja = yk ? p[0] : p[1], jp = yk ? p[1] : p[0];
+        if (ja < lo0 - 100 || ja > hi0 + 100) continue;
+        const d = Math.abs(jp - sen);
+        if (d > KAGI_JI || best && d >= best.d) continue;
+        const tome = [];
+        for (const h of cols2) if (Math.abs((yk ? h.y : h.x) - c) < 5) {
+          const v = yk ? h.x : h.y;
+          tome.push(v - h.s / 2, v + h.s / 2);
+        }
+        for (const x of walls) if (x.y1 === x.y2 !== yk) {
+          const xc = yk ? x.x1 : x.y1, lo = Math.min(yk ? x.y1 : x.x1, yk ? x.y2 : x.x2), hi = Math.max(yk ? x.y1 : x.x1, yk ? x.y2 : x.x2);
+          if (c >= lo - 5 && c <= hi + 5) {
+            const half = hw(x);
+            tome.push(xc - half, xc + half);
+          }
+        }
+        for (const o of obi || []) if (o.V === !yk && Math.abs(o.c - c) < 130) tome.push(o.a, o.b);
+        const s305 = [];
+        for (const t2 of Object.values((yk ? g.XN : g.YN) || {})) for (let n = -80; n <= 80; n++) s305.push(t2 + n * 305);
+        const soroe = (v) => {
+          let b2 = null;
+          for (const x of tome) if (Math.abs(x - v) <= KAGI_TOL && (b2 == null || Math.abs(x - v) < Math.abs(b2 - v))) b2 = x;
+          if (b2 == null) {
+            for (const x of s305) if (Math.abs(x - v) <= KAGI_TOL && (b2 == null || Math.abs(x - v) < Math.abs(b2 - v))) b2 = x;
+          }
+          return b2;
+        };
+        const t0 = Math.min(al(P[0]), al(P[3])), t1 = Math.max(al(P[0]), al(P[3]));
+        let a = soroe(t0), b = soroe(t1);
+        const zure = a == null || b == null;
+        if (a == null) a = Math.round(t0);
+        if (b == null) b = Math.round(t1);
+        best = { d, yoko: yk, c, a: Math.round(a), b: Math.round(b), tenba, kagi: true, zure };
+      }
+      if (best && best.zure) chuui.push("増し打ちの注記「" + t + "」のかぎ形の線の端が、柱の面・交わる基礎の面・増し打ちの端・305の芯のどれにも近くない。線の位置のまま範囲にした。図面で確かめる");
+      if (best) delete best.zure;
+      return best;
+    };
     for (const w of ws) {
       const tb = chukiTenba(w.t);
       if (tb == null) continue;
@@ -2923,6 +2995,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
           }
         }
       }
+      if (!best) best = kagiHani(p, -Number(m[1]), String(w.t).normalize("NFKC"));
       if (best) {
         if (!chuki.some((n) => n.yoko === best.yoko && Math.abs(n.c - best.c) < 5 && Math.abs(n.a - best.a) < 5)) chuki.push(best);
         continue;
@@ -3004,13 +3077,14 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
           const ichi = (v, t) => Math.abs(v - t) <= ICHI_ZURE;
           const okIchi = o.w === 220 ? ichi(o.lo, c - 110) && ichi(o.hi, c + 110) : ichi(o.lo, c - 110) && ichi(o.hi, c + 10) || ichi(o.lo, c - 10) && ichi(o.hi, c + 110);
           if (!okIchi) {
-            if (o.lo >= c - half - 15 && o.hi <= c + half + 15) ichiNG.push({ yoko, c, a: Math.round(Math.max(p0, o.a)), b: Math.round(Math.min(p1, o.b)), w: o.w });
+            if (o.lo >= c - half - 15 && o.hi <= c + half + 15 && Math.min(p1, o.b) - Math.max(p0, o.a) >= 50) ichiNG.push({ yoko, c, a: Math.round(Math.max(p0, o.a)), b: Math.round(Math.min(p1, o.b)), w: o.w });
             continue;
           }
           const a = Math.max(p0, o.a), b = Math.min(p1, o.b);
           if (b - a < 50) continue;
           const men = o.w === 120 ? o.c > c ? 1 : -1 : 0;
-          dan = uwagaki(dan, a, b, { tenba: MASHI_TENBA, haba: o.w, men, moto: "増し打ち", ...o.w === 120 ? { nokori: t0 } : {} });
+          const nokori = !(type === "step" || type === "low") ? t0 : /[69]C/.test(k.fugo || "") ? fugoTenba("low", k.fugo) : Takasa.OBI[1].lo;
+          dan = uwagaki(dan, a, b, { tenba: MASHI_TENBA, haba: o.w, men, moto: "増し打ち", ...o.w === 120 ? { nokori } : {} });
         }
         if (kYomi) for (const m of opts.mashi && opts.mashi.han || []) {
           const my = m.y1 === m.y2;
@@ -3250,8 +3324,9 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
             chuui.push("3Cの上の短い増し打ちの端(" + (q.yoko ? Math.round(al) + "," + q.c : q.c + "," + Math.round(al)) + ")は305の芯で止まるが、隣の天端が分からない・低くないので板を数えていない。図面で確かめる");
             return false;
           };
-          if (nodeOf(d.a) == null && shin(d.a) && !ita.some((t) => t.sg === -1) && itaOk(mae, d.a)) ita.push({ al: Math.round(d.a), sg: -1, tan: true, nagasa: -mae.tenba + ITA_UE_OTOSHINASHI, ue: ITA_UE_OTOSHINASHI });
-          if (nodeOf(d.b) == null && shin(d.b) && !ita.some((t) => t.sg === 1) && itaOk(ato, d.b)) ita.push({ al: Math.round(d.b), sg: 1, tan: true, nagasa: -ato.tenba + ITA_UE_OTOSHINASHI, ue: ITA_UE_OTOSHINASHI });
+          const itaD = -Takasa2.OBI[ue].hi + ITA_UE_OTOSHINASHI;
+          if (nodeOf(d.a) == null && shin(d.a) && !ita.some((t) => t.sg === -1) && itaOk(mae, d.a)) ita.push({ al: Math.round(d.a), sg: -1, tan: true, nagasa: itaD, ue: ITA_UE_OTOSHINASHI });
+          if (nodeOf(d.b) == null && shin(d.b) && !ita.some((t) => t.sg === 1) && itaOk(ato, d.b)) ita.push({ al: Math.round(d.b), sg: 1, tan: true, nagasa: itaD, ue: ITA_UE_OTOSHINASHI });
         }
         a = Math.round(a);
         b = Math.round(b);
@@ -3397,7 +3472,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       for (const [e, sg] of [[d.a, -1], [d.b, 1]]) {
         const pt = (al) => q.yoko ? [al, q.c] : [q.c, al];
         const [x, y] = pt(e), h = inH(...pt(e + sg * 25)), nd = danAt(q, e + sg * 25);
-        let shu = null, nagasa = null, kari = false;
+        let shu = null, nagasa = null, kari = false, ue = null;
         if (h && h.ten && d.tenba === MASHI_TENBA) {
           shu = "A";
           nagasa = -TENPO - 10;
@@ -3407,7 +3482,22 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
           kari = true;
         } else if (!h && d.tenba === MASHI_TENBA && nd && nd !== d && nd.moto === "注記") {
           shu = "C";
-          nagasa = -nd.tenba - 10;
+          nagasa = -nd.tenba + ITA_UE_OTOSHINASHI;
+          ue = ITA_UE_OTOSHINASHI;
+        }
+        if (!shu && !h && d.moto === "注記" && -d.tenba > -Takasa.OBI[1].lo + 1) {
+          const kosa = !(nd && nd.moto === "注記") && cz.ku.find((r2) => r2.yoko !== q.yoko && (() => {
+            const dd = Math.abs(r2.c - e);
+            return dd > 5 && (Math.abs(dd - 110) <= 20 || Math.abs(dd - 190) <= 20);
+          })() && q.c >= r2.p0 - 1 && q.c <= r2.p1 + 1 && (() => {
+            const x2 = danAt(r2, q.c);
+            return x2 && x2.tenba === MASHI_TENBA;
+          })());
+          if (kosa) {
+            shu = "F";
+            nagasa = -d.tenba + Takasa.OBI[1].lo + ITA_UE_OTOSHINASHI;
+            ue = Takasa.OBI[1].lo + ITA_UE_OTOSHINASHI;
+          }
         }
         if (!shu) continue;
         let bx = x, by = y;
@@ -3415,7 +3505,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
           if (q.yoko) bx = h.x - sg * h.s / 2;
           else by = h.y - sg * h.s / 2;
         }
-        const r = { shu, x: Math.round(bx), y: Math.round(by), yoko: q.yoko, muki: sg, nagasa, kari, hashira: h ? [h.x, h.y] : null };
+        const r = { shu, x: Math.round(bx), y: Math.round(by), yoko: q.yoko, muki: sg, nagasa, kari, hashira: h ? [h.x, h.y] : null, ...ue != null ? { ue } : {} };
         if (!out.some((o) => Math.abs(o.x - r.x) < 3 && Math.abs(o.y - r.y) < 3 && o.yoko === r.yoko && o.muki === r.muki)) out.push(r);
       }
     }
@@ -4368,6 +4458,8 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     FB_W: 330,
     FB_NOBI: 55,
     W_HALF: 110,
+    W120_SAKI: 10,
+    // 版24: 幅120の増し打ちの部屋側の面は芯から10(02の14.7)
     W380_HALF: 190,
     KADAN_TOP: -310,
     // 版11: 380幅の半分の幅と、段違いの下段の天端(Z0−310。ダウンなしのとき)
@@ -4403,7 +4495,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     for (const s of segs) if (S.BOT[s.depth] == null) chuui.push(basho(s) + " の深さ(" + s.depth + ")の決まりがない。ダウンなしとして数えた");
     const bot = (d) => S.BOT[d] != null ? S.BOT[d] : S.BOT[0];
     const hiro = segs.filter((s) => s.hiro);
-    if (hiro.length) oshirase.push("380幅の基礎が " + hiro.length + " 区間ある。3Cは 380×290、段違いは 下段380×300＋増し打ち220×260 で数えた");
+    if (hiro.length) oshirase.push("380幅の基礎が " + hiro.length + " 区間ある。3Cは 380×290、段違いは 下段380×300＋増し打ち220×260(幅120の増し打ちは120幅) で数えた");
     const hashiNobi = (s, e) => {
       let k = null, t = null;
       for (const o of segs) {
@@ -4449,8 +4541,15 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     for (const s of segs) {
       const q = kuOf(s);
       if (q && q.dan && q.dan.length) {
-        s.dan = q.dan.map((d) => ({ a: Math.min(d.a, d.b), b: Math.max(d.a, d.b), tenba: d.tenba, haba: d.haba })).sort((p, r) => p.a - r.a);
-        if (s.dan.some((d) => d.haba)) chuui.push(basho(s) + " に幅" + s.dan.find((d) => d.haba).haba + "の増し打ちがある。生コンの決まりがまだないので220幅で数えた");
+        s.dan = q.dan.map((d) => ({ a: Math.min(d.a, d.b), b: Math.max(d.a, d.b), tenba: d.tenba, haba: d.haba, ...d.haba === 120 ? { men: d.men, ...d.nokori != null ? { nokori: d.nokori } : {} } : {} })).sort((p, r) => p.a - r.a);
+        const nk = s.dan.find((d) => d.nokori != null);
+        for (const d of s.dan) if (d.haba === 120 && d.nokori == null && nk) {
+          d.men = d.men || nk.men;
+          d.nokori = nk.nokori;
+        }
+        for (const d of s.dan) if (d.haba === 120 && d.nokori != null && !d.men) delete d.nokori;
+        if (s.dan.some((d) => d.haba === 120 && d.nokori == null)) chuui.push(basho(s) + " に幅120の増し打ちがあるが、部屋の側の天端が分からない。220幅で数えた");
+        if (s.dan.some((d) => d.nokori != null && d.nokori !== d.tenba)) s.han120 = true;
         if (s.dan.some((d) => d.tenba == null)) chuui.push(basho(s) + " の天端が分からない所がある。普通の天端 Z0−50 で数えた");
       } else {
         chizuNashi++;
@@ -4461,9 +4560,17 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     if (chizu && chizuNashi) chuui.push("天端の地図にない区間が " + chizuNashi + " ある。符号で天端を決めた");
     if (!chizu) oshirase.push("天端の地図がないので、天端は符号で決めた(基礎アプリの高さの表。網掛け・増し打ち・注記は入っていない)");
     if (!chizu && !(Takasa && Takasa.tenba)) chuui.push("高さの表(takasa.js)が読めないので、天端は 4C Z0−415・ほか Z0−50 で数えた");
-    const topAt = (s, u) => {
+    const danAt = (s, u) => {
       const v = Math.min(Math.max(u, s.a), s.b);
-      const d = s.dan.find((d2) => v >= d2.a && v <= d2.b) || s.dan.reduce((m, d2) => Math.min(Math.abs(d2.a - v), Math.abs(d2.b - v)) < Math.min(Math.abs(m.a - v), Math.abs(m.b - v)) ? d2 : m);
+      return s.dan.find((d) => v >= d.a && v <= d.b) || s.dan.reduce((m, d) => Math.min(Math.abs(d.a - v), Math.abs(d.b - v)) < Math.min(Math.abs(m.a - v), Math.abs(m.b - v)) ? d : m);
+    };
+    const topAt = (s, u) => {
+      const d = danAt(s, u);
+      return d.tenba == null ? S.TOP : d.tenba;
+    };
+    const topAtP = (s, u, pe) => {
+      const d = danAt(s, u);
+      if (d.nokori != null && (d.men > 0 ? pe < -S.W120_SAKI : pe > S.W120_SAKI)) return s.hiro ? Math.max(d.nokori, s.kadan) : d.nokori;
       return d.tenba == null ? S.TOP : d.tenba;
     };
     function profile(s, u) {
@@ -4593,13 +4700,13 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         let top = -Infinity, soko = Infinity;
         for (const o of kabeAt(x, y)) {
           const u = o.V ? y : x;
-          let t = topAt(o, u);
+          let t = topAtP(o, u, (o.V ? x : y) - o.c);
           if (o.hiro && Math.abs((o.V ? x : y) - o.c) > S.W_HALF) t = Math.min(t, o.kadan);
           top = Math.max(top, t);
           soko = Math.min(soko, profile(o, u)[1]);
         }
         if (!isFinite(top)) {
-          top = topAt(s, al);
+          top = topAtP(s, al, (s.V ? x : y) - s.c);
           soko = profile(s, al)[1];
         }
         out.kabe = Math.max(0, top - soko);
@@ -4652,6 +4759,11 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       const B = s.V ? xs : ys;
       B.add(s.c - S.W_HALF);
       B.add(s.c + S.W_HALF);
+    }
+    for (const s of segs) if (s.han120) {
+      const B = s.V ? xs : ys;
+      B.add(s.c - S.W120_SAKI);
+      B.add(s.c + S.W120_SAKI);
     }
     for (const P of shapes) for (const [x, y] of P) {
       xs.add(x);
@@ -4724,6 +4836,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       // 版21: fbR=幅330・490で数えた帯(ベースの式で使う)
       _segs: segs,
       _topAt: topAt,
+      _dan: danAt,
       _soko: (s, u) => profile(s, u)[1]
     };
   }
@@ -5111,11 +5224,20 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         for (let i = 0; i + 1 < T.length; i++) {
           const m = (T[i] + T[i + 1]) / 2, len = T[i + 1] - T[i], top = M._topAt(s, m), soko = M._soko(s, m);
           const fk = " " + fukasa(soko);
-          if (!s.hiro) tasu2("220幅" + fk, 220, top - soko, len, basho2);
+          const d120 = M._dan ? M._dan(s, m) : null, w120 = d120 && d120.nokori != null && top > d120.nokori;
+          if (!s.hiro && w120) {
+            tasu2("220幅" + fk, 220, d120.nokori - soko, len, basho2);
+            tasu2("増し打ち(120幅)", 120, top - d120.nokori, len, basho2);
+          } else if (!s.hiro) tasu2("220幅" + fk, 220, top - soko, len, basho2);
           else if (top <= s.kadan) tasu2("380幅" + fk, 380, top - soko, len, basho2);
-          else {
+          else if (!w120) {
             tasu2((s.wall.type === "low" ? "380幅の下段" : "380幅の下段(段違い)") + fk, 380, s.kadan - soko, len, basho2);
             tasu2("増し打ち(220幅)", 220, top - s.kadan, len, basho2);
+          } else {
+            const nk = Math.max(d120.nokori, s.kadan);
+            tasu2((s.wall.type === "low" ? "380幅の下段" : "380幅の下段(段違い)") + fk, 380, s.kadan - soko, len, basho2);
+            if (nk > s.kadan) tasu2("増し打ち(220幅)", 220, nk - s.kadan, len, basho2);
+            tasu2("増し打ち(120幅)", 120, top - nk, len, basho2);
           }
         }
       }
@@ -6722,7 +6844,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   <p>多すぎると余った生コンの処分にお金がかかり、少なすぎると打ち継ぎになります。数はアプリの計算(図面どおり)なので、型枠のふくらみやこぼれは入っていません。この目安は決まった基準ではないので、現場の経験で選んでください。</p>
 </details></template>
 <script>
-const HAN = 23;
+const HAN = 24;
 NamakonIriguchi.hanKimeru(HAN);
 document.getElementById("han").textContent = "版" + HAN;
 const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.min.mjs";
