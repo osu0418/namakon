@@ -90,6 +90,8 @@ h1 { font-size: 20px; margin: 0; text-wrap: balance; }
 .zuBox.ookiku .ukiDougu .dougu { flex-wrap: wrap; gap: 6px; }
 .zuBox.ookiku .ukiDougu .dougu button { min-height: 40px; padding: 0 10px; font-size: 14px; }
 body.zuOokiku { overflow: hidden; }
+html:has(body.zuOokiku) { overscroll-behavior: none; }   
+.zuHiraku[hidden] { display: none; }
 .ukiDougu { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px; pointer-events: none; }   
 .ukiDougu button { white-space: nowrap; }
 .ukiDougu button { pointer-events: auto; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: 15px; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
@@ -305,7 +307,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       <div class="zuBox" id="zuBox" role="region" aria-label="図面">
         <div class="modeObi" id="modeObi"><button type="button" id="zuTojiru">✕ 閉じる</button><span class="imaMode" id="imaMode" role="status" hidden></span><button type="button" id="uMode" hidden></button><button type="button" id="zuSho" aria-label="縮める">−</button><button type="button" id="zuDai" aria-label="大きくする">＋</button><button type="button" id="zuZentai">全体</button></div>
         <div class="zuWaku"><div class="zu" id="zu"></div><div class="zuTate" id="zuTate" aria-label="指でなぞると図が上下に動く">↕</div><div class="zuYoko" id="zuYoko" aria-label="指でなぞると図が左右に動く">↔</div></div>
-        <button type="button" class="zuHiraku" id="zuHiraku" aria-label="図面を大きくして操作する"><span>図面を大きくして操作する</span></button>
+        <button type="button" class="zuHiraku" id="zuHiraku" aria-label="図面を開いてなぞる" hidden><span>図面を開いてなぞる</span></button>
         <div class="ukiDougu" id="ukiDougu" hidden><div id="zuRyo"></div><button type="button" id="uKesu1">1本消す</button><button type="button" id="uKakutei" hidden>確定</button></div></div>
       <p class="setsumei" id="zumenInfo"></p>
       <div class="erabuBox" id="erabuBox" hidden>
@@ -7051,7 +7053,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     ["③ 追加量の出し方", ["「生コンの追加量を計算する」を押す", "図面の画面が開く", "下の帯で、立上りかベースかを選ぶ", "残りの基礎を1本指でなぞる", "なぞり終えたら、下の「確定」を押す(ダウンがあれば、どこから上を数えるか選ぶ。打ち済みの高さが違う所は、分けてなぞって確定する)", "やり直すときは「1本消す」"]],
     ["④ 打設を分ける", ["「生コンの打設を分ける」を押す", "図面の画面が開く", "緑の所を1本指で押す。赤は区切れない", "区切りたい向きへ指を動かす", "指をはなすと決まる", "線の近くを押すと、動かせる", "日の順は「↑」で入れ替え", "6Dで区切るときは「6Dでも区切る」"]],
     ["⑤ PDF・印刷", ["「PDFにする」か「印刷」を押す"]],
-    ["図の見方", ["図面の上の「図面を大きくして操作する」で、画面いっぱいの図面になる", "図面の画面では、2本の指で図をずらす・広げると大きくなる", "2本指が使いにくいときは、右の「↕」の帯を上下に、下の「↔」の帯を左右になぞると図が動く。上の「＋」「−」で大きさを変える", "「✕ 閉じる」で元の画面に戻る", "邸名の下の「詳細」で、全長とベースの式"]]
+    ["図の見方", ["「生コンの追加量を計算する」「生コンの打設を分ける」を押すと、画面いっぱいの図面になる(閉じたあとは図面の上の「図面を開いてなぞる(区切る)」で戻る)", "図面の画面では、2本の指で図をずらす・広げると大きくなる", "2本指が使いにくいときは、右の「↕」の帯を上下に、下の「↔」の帯を左右になぞると図が動く。上の「＋」「−」で大きさを変える", "「✕ 閉じる」で元の画面に戻る", "邸名の下の「詳細」で、全長とベースの式"]]
   ];
   function ichiran(hako) {
     hako.innerHTML = `<h2>このアプリでできること</h2>` + KA.map((k) => `<div class="icKa">${svg(E[k.e])}<div><b>${k.na}</b><span>${k.s}</span></div></div>`).join("") + `<h2>はじめ方</h2><div class="icKa">${svg(E.ireru)}<div><b>茶色のボタンを押す</b><span>保存した図面を選ぶ</span></div></div><details class="icShosai" data-shu="zumen"><summary>LINEの図面の保存の仕方<span class="shosai" aria-hidden="true"></span></summary><div class="icHozon"></div></details><details class="icShosai" data-shu="home"><summary>アプリを携帯の画面に置く<span class="shosai" aria-hidden="true"></span></summary><div class="icHozon"></div></details><h2>使い方</h2>` + SHOSAI.map(([na, L]) => `<details class="icShosai"><summary>${na}<span class="shosai" aria-hidden="true"></span></summary><ol class="tejun">${L.map((l) => `<li>${l}</li>`).join("")}</ol></details>`).join("");
@@ -7902,7 +7904,9 @@ function ukiDouguKaku() {
   $("ukiDougu").hidden = !kaku;
   $("imaMode").hidden = true;
   $("uMode").hidden = true;
-  $("zuHiraku").hidden = !ZU;
+  $("zuHiraku").hidden = !kaku;
+  $("zuHiraku").firstElementChild.textContent = YOTO === "uchiwake" ? "図面を開いて区切る" : "図面を開いてなぞる";
+  $("zuHiraku").setAttribute("aria-label", $("zuHiraku").firstElementChild.textContent);
   if (!ZU) {
     zuOokiku(false);
     $("zuRyo").textContent = "";
@@ -7988,6 +7992,9 @@ function zuOokiku(on) {
   }
 }
 $("zuHiraku").onclick = () => zuOokiku(true);
+document.addEventListener("touchmove", (e) => {
+  if ($("zuBox").classList.contains("ookiku") && e.cancelable) e.preventDefault();
+}, { passive: false });
 $("zuTojiru").onclick = () => zuOokiku(false);
 $("zuZentai").onclick = () => ZU && ZU.zentai();
 $("zuDai").onclick = () => ZU && ZU.kakudaiNaka(1 / 1.5);
