@@ -41,6 +41,7 @@ h1 { font-size: 20px; margin: 0; text-wrap: balance; }
 #zenchoMoji { font-family: var(--f-num); font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .zenchoShosai { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 .zenchoShosai details { min-width: 0; }
+.zenchoShosai details[open] { flex: 1 1 100%; }   
 .zenchoShosai table { margin-top: 4px; }
 
 .zenchoShosai > details > summary { list-style: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px;
@@ -87,6 +88,9 @@ h1 { font-size: 20px; margin: 0; text-wrap: balance; }
 #zuTojiru { pointer-events: auto; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 14px; font-weight: 700; }
 #zuZentai { pointer-events: auto; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 14px; }
 #zuRyo { flex: 1 1 100%; min-height: 1.5em; font-family: var(--f-num); font-size: 15px; font-weight: 700; }
+#zuRyo small { font-size: 14px; font-weight: 700; color: var(--mute); }
+#zuRyo .ookiiRyo { font-size: 30px; line-height: 1.1; color: var(--accent); white-space: nowrap; }   
+@media (max-height: 500px) { #zuRyo .ookiiRyo { font-size: 22px; } }
 .zuBox.ookiku .ukiDougu .dougu { flex-wrap: wrap; gap: 6px; }
 .zuBox.ookiku .ukiDougu .dougu button { min-height: 40px; padding: 0 10px; font-size: 14px; }
 body.zuOokiku { overflow: hidden; }
@@ -98,9 +102,6 @@ html:has(body.zuOokiku) { overscroll-behavior: none; }
 
 .modeObi { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; pointer-events: none; }
 .modeObi[hidden] { display: none; }
-.modeObi .imaMode { pointer-events: none; padding: 6px 10px; border-radius: 99px; font-size: 14px; font-weight: 700; background: #5d6762; color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
-.modeObi .imaMode.kaku { background: #e01e1e; }
-.modeObi #uMode { pointer-events: auto; background: var(--panel); color: var(--accent); border: 2px solid var(--accent); border-radius: 8px; padding: 6px 10px; font-size: 14px; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
 .zu { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .zu svg { display: block; width: 100%; height: 62vh; min-height: 320px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .zu svg.zumenAri { background: #fff; }   
@@ -143,6 +144,10 @@ html:has(body.zuOokiku) { overscroll-behavior: none; }
 .erabuBox .ookii small { font-size: 12px; font-weight: 400; opacity: .9; }
 .tsugiObi { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--panel); border-top: 2px solid var(--accent); padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
 .tsugiObi[hidden] { display: none; }
+
+.yotoObi { background: var(--accent); color: #fff; border-radius: 10px; padding: 10px 12px; font-size: 20px; font-weight: 700; margin: 12px 0 8px; scroll-margin-top: 8px; }
+.yotoObi[hidden], #zuFuda[hidden] { display: none; }
+#zuFuda { background: var(--accent); color: #fff; border-radius: 99px; padding: 6px 12px; font-size: 16px; font-weight: 700; }
 .tsugiObi div { width: 100%; font-size: 13px; font-weight: 700; }
 .tsugiObi button { flex: 1; padding: 0 4px; min-height: 44px; border-radius: 8px; background: var(--accent); color: #fff; border: 0; font-size: 15px; font-weight: 700; }
 body.obiAri { padding-bottom: 96px; }
@@ -271,7 +276,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     <div class="wrap">
       <div class="teimeiGyo"><p id="teimei"></p><span id="zenchoMoji"></span></div>
       <div class="zenchoShosai" id="zenchoShosai" hidden>
-        <details id="tachiShosai"><summary>立上りの詳細</summary><table class="wari" id="zencho"></table></details>
+        <details id="tachiShosai"><summary>立上りの詳細</summary><table class="wari" id="zencho" style="width:100%"></table></details>
         <details><summary>ベースの詳細</summary><div class="shiki" id="zenchoBase" style="border-top:0;padding-top:4px"></div></details>
       </div>
       <div class="dougu" id="insatsuBtns"><button type="button" id="bPdf">PDFにする</button><button type="button" id="bInsatsu">印刷</button><span id="insatsuMsg" style="color:var(--mute)"></span></div>
@@ -282,11 +287,7 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         <div class="wari" id="zentaiMashi" style="color:var(--mute)"></div>
         <div class="meyasuBasho"></div>
       </div>
-      <div class="dougu" role="tablist" aria-label="使い道" id="yotoGyo" hidden>
-        <button type="button" id="bDaisu" aria-pressed="false">台数</button>
-        <button type="button" id="bTsuika" aria-pressed="false">追加量</button>
-        <button type="button" id="bUchiwake" aria-pressed="false">打設を分ける</button>
-      </div>
+      <div class="yotoObi" id="yotoObi" role="status" hidden></div>
       <div id="daisuBashoUe"><div class="kekka2 daisuBox" id="daisuBox" hidden>
         <div>生コン車の台数</div>
         <div class="dougu kuruma" id="kurumaBtns" role="group" aria-label="生コン車"></div>
@@ -297,15 +298,13 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         <button type="button" id="bBase" aria-pressed="false">ベース</button>
       </div>
       <div class="dougu" role="toolbar" aria-label="図の操作" id="sousaGyo">
-        <button type="button" id="bNazoru" aria-pressed="true">なぞる</button>
-        <button type="button" id="bIdou" aria-pressed="false">動かす</button>
         <button type="button" id="bZentai">全体</button>
         <button type="button" id="bKesu1">1本消す</button>
         <button type="button" id="bKesuAll">全部消す</button>
         <button type="button" id="bZumen" aria-pressed="false" disabled>図面</button>
       </div>
       <div class="zuBox" id="zuBox" role="region" aria-label="図面">
-        <div class="modeObi" id="modeObi"><button type="button" id="zuTojiru">✕ 閉じる</button><span class="imaMode" id="imaMode" role="status" hidden></span><button type="button" id="uMode" hidden></button><button type="button" id="zuSho" aria-label="縮める">−</button><button type="button" id="zuDai" aria-label="大きくする">＋</button><button type="button" id="zuZentai">全体</button></div>
+        <div class="modeObi" id="modeObi"><button type="button" id="zuTojiru">✕ 閉じる</button><span id="zuFuda" hidden></span><button type="button" id="zuSho" aria-label="縮める">−</button><button type="button" id="zuDai" aria-label="大きくする">＋</button><button type="button" id="zuZentai">全体</button></div>
         <div class="zuWaku"><div class="zu" id="zu"></div><div class="zuTate" id="zuTate" aria-label="指でなぞると図が上下に動く">↕</div><div class="zuYoko" id="zuYoko" aria-label="指でなぞると図が左右に動く">↔</div></div>
         <button type="button" class="zuHiraku" id="zuHiraku" aria-label="図面を開いてなぞる" hidden><span>図面を開いてなぞる</span></button>
         <div class="ukiDougu" id="ukiDougu" hidden><div id="zuRyo"></div><button type="button" id="uKesu1">1本消す</button><button type="button" id="uKakutei" hidden>確定</button></div></div>
@@ -4980,7 +4979,8 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       hashiraR,
       chikai,
       fbR,
-      // 版21: fbR=幅330・490で数えた帯(ベースの式で使う)
+      baseNaka: inBase,
+      // 版29(3章): 点がベースの中か(量を数えるときと同じ判定。追加量のベースをなぞって選ぶのに使う。量は変わらない)   // 版21: fbR=幅330・490で数えた帯(ベースの式で使う)
       _segs: segs,
       _topAt: topAt,
       _dan: danAt,
@@ -5545,6 +5545,13 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   const naka = (iv, u) => iv.some(([a, b]) => u >= a - 0.5 && u <= b + 0.5);
   function kisoTen(K, x, y, settei) {
     const m = settei && settei.MASU || KIMARI.MASU, hanare = KIMARI.KISO_HANARE;
+    if (K.base) {
+      if (!K.base.naka(x, y)) return null;
+      const s = K.base.chikai(x, y);
+      if (!s) return null;
+      const al = s.V ? y : x, u = Math.min(s.b, Math.max(s.a, Math.round(al / m) * m + 0));
+      return { d: Math.abs((s.V ? x : y) - s.c), V: s.V, c: s.c, p: s.V ? [s.c, u] : [u, s.c] };
+    }
     let best = null;
     for (const [tate, M] of [[true, K.V], [false, K.H]]) for (const [c, iv] of M) {
       const pe = tate ? x : y, al = tate ? y : x, d0 = Math.abs(pe - c);
@@ -6241,6 +6248,34 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
       const L = senList.map((l, i) => i === ima.tsukamu && ima.L.pts ? { pts: ima.L.pts } : l);
       opt.onSen(L, { ugokashi: true });
     };
+    function tsukamuHashi(cx, cy) {
+      const r = svg.getBoundingClientRect();
+      if (!r.width || !kiso) return null;
+      const [x, y] = mm(cx, cy), lim = 24 * vb.w / r.width;
+      let best = null;
+      const t = Nazori.kisoTen(kiso, x, y);
+      senList.forEach((L, i) => {
+        const P = L.pts;
+        if (!P || P.length < 2) return;
+        for (const [dore, q, o] of [[0, P[0], P[1]], [1, P[P.length - 1], P[P.length - 2]]]) {
+          const V = q[0] === o[0];
+          if (!t || !(t.V === V && t.c === (V ? q[0] : q[1]))) continue;
+          {
+            const k = V ? 1 : 0;
+            if (Math.abs(t.p[k] - q[k]) > 305) continue;
+          }
+          const d = Math.hypot(x - q[0], y - q[1]);
+          if (d <= lim && (!best || d < best.d)) best = { d, i, dore, cx, cy };
+        }
+      });
+      return best;
+    }
+    function hashiHajime(h) {
+      const P = senList[h.i].pts.map((q) => q.slice());
+      if (!h.dore) P.reverse();
+      const a = P[P.length - 2], b = P[P.length - 1], V = a[0] === b[0];
+      return { pts: P, kiso, ima: { V, c: V ? b[0] : b[1], p: b }, tsukamu: h.i, L: senList[h.i], hashi: true, moto: JSON.stringify(P), hajime: { cx: h.cx, cy: h.cy } };
+    }
     function tsukamuSen(cx, cy) {
       const r = svg.getBoundingClientRect();
       if (!r.width) return -1;
@@ -6309,8 +6344,9 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
           mushiUgoku(e.clientX, e.clientY);
         }
       } else if (mode === "nazoru" && e.button === 0) {
-        const [x, y] = mm(e.clientX, e.clientY);
-        ima = kiso && yoto === "tsuika" ? Nazori.kisoHajime(kiso, x, y) : Nazori.hajime(x, y);
+        const [x, y] = mm(e.clientX, e.clientY), h = kiso && yoto === "tsuika" ? tsukamuHashi(e.clientX, e.clientY) : null;
+        if (h) kakuSen(ima = hashiHajime(h));
+        else ima = kiso && yoto === "tsuika" ? Nazori.kisoHajime(kiso, x, y) : Nazori.hajime(x, y);
         mae = [x, y];
         matsu = !ima && !!kiso && yoto === "tsuika";
         mushiDasu();
@@ -6366,6 +6402,13 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
         mushiUgoku(e.clientX, e.clientY);
       } else if (ima) {
         const [x, y] = mm(e.clientX, e.clientY);
+        if (ima.hashi && ima.hajime) {
+          if (Math.hypot(e.clientX - ima.hajime.cx, e.clientY - ima.hajime.cy) < MUKI_PX) {
+            mushiUgoku(e.clientX, e.clientY);
+            return;
+          }
+          ima.hajime = null;
+        }
         if (ima.kiso) {
           const n = Math.max(1, Math.ceil(Math.hypot(x - mae[0], y - mae[1]) / 150));
           let kawa = false;
@@ -6400,6 +6443,32 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
           senList.push({ pts: L.pts, ku: k });
           kawatta();
         }
+      } else if (ima && ima.hashi) {
+        const H = ima;
+        ima = null;
+        kakuIma();
+        if (e.type === "pointerup" && H.pts.length >= 2 && JSON.stringify(H.pts) !== H.moto) {
+          const L = H.L;
+          if (!senList.includes(L)) {
+            kakuSen();
+            pan = null;
+            matsu = false;
+            return;
+          }
+          L.pts = H.pts;
+          if (kiso.base) {
+            delete L.shita;
+            delete L.na;
+          } else {
+            if (!L.mi) {
+              L.mi = true;
+              L.bk = true;
+            }
+            delete L.shita;
+            delete L.na;
+          }
+          kawatta();
+        } else kakuSen();
       } else if (ima) {
         const L = Nazori.owari(ima);
         ima = null;
@@ -6903,7 +6972,57 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
     const hanchShiki = hanchList.filter((h) => !h.fb).reduce((a, h) => a + h.v, 0);
     return { men, soto, pit, kaiko: kaiko.sort((a, b) => b - a), hira, hanch, fb, hashira: hashi, gokei: hira + hanch + fb + hashi, hanchList, hanchShiki, KIMARI };
   }
-  const api = { keisan, KIMARI };
+  function habaBetsu(M, shapes, opt) {
+    const S0 = shapes || [], moto = opt && opt.moto != null ? opt.moto : S0.length, S = S0.slice(0, moto);
+    const inZumen = (x, y) => {
+      let n = 0;
+      for (const P of S) if (inPoly(P, x, y)) n++;
+      return n % 2 === 1;
+    };
+    const haba = (V, c, u) => {
+      const T = [];
+      for (const P of S) for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+        const [xi, yi] = P[i], [xj, yj] = P[j];
+        const [ai, bi, aj, bj] = V ? [yi, xi, yj, xj] : [xi, yi, xj, yj];
+        if (ai === aj || ai > u === aj > u) continue;
+        T.push(bi + (bj - bi) * (u - ai) / (aj - ai) - c);
+      }
+      let lo = -Infinity, hi = Infinity;
+      for (const t of T) {
+        if (t < 0 && t > lo) lo = t;
+        if (t >= 0 && t < hi) hi = t;
+      }
+      return isFinite(lo) && isFinite(hi) ? Math.round((hi - lo) / 5) * 5 : null;
+    };
+    const tbl = /* @__PURE__ */ new Map();
+    let zentai = 0, hiroi = 0;
+    for (const s of M.kukanSen || []) {
+      const L = s.b - s.a;
+      if (L <= 0) continue;
+      zentai += L;
+      const cnt = /* @__PURE__ */ new Map();
+      for (let u = s.a + 25; u < s.b; u += 50) {
+        const [x, y] = s.V ? [s.c, u] : [u, s.c];
+        let k2;
+        if (!inZumen(x, y)) k2 = "FB" + KIMARI.FB_W[s.hw > 150 ? 380 : 220];
+        else {
+          const w = haba(s.V, s.c, u);
+          if (w == null || w >= 3e3) continue;
+          k2 = String(w);
+        }
+        cnt.set(k2, (cnt.get(k2) || 0) + 1);
+      }
+      if (!cnt.size) {
+        hiroi += L;
+        continue;
+      }
+      const k = [...cnt].sort((p, q) => q[1] - p[1])[0][0];
+      tbl.set(k, (tbl.get(k) || 0) + L);
+    }
+    const out = [...tbl].map(([k, m]) => ({ na: k.startsWith("FB") ? "FB(" + k.slice(2) + "で計算)" : k, haba: +k.replace("FB", ""), fb: k.startsWith("FB"), m })).sort((p, q) => q.m - p.m);
+    return { haba: out, zentai, hiroi };
+  }
+  const api = { keisan, habaBetsu, KIMARI };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.BaseShiki = api;
 })(this);
@@ -7121,9 +7240,9 @@ input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); o
   <p>多すぎると余った生コンの処分にお金がかかり、少なすぎると打ち継ぎになります。数はアプリの計算(図面どおり)なので、型枠のふくらみやこぼれは入っていません。この目安は決まった基準ではないので、現場の経験で選んでください。</p>
 </details></template>
 <script>
-const HAN = 28;
+const HAN = 29;
 NamakonIriguchi.hanKimeru(HAN);
-document.getElementById("han").textContent = "版" + HAN + " 試し3";
+document.getElementById("han").textContent = "版" + HAN + " 試し1";
 const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.min.mjs";
 const WORKER_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.worker.min.mjs";
 let pdfjs = null;
@@ -7279,7 +7398,8 @@ function show(R) {
   if (R.g.k) {
     ZU = ZumenZu.tsukuru($("zu"), R, { onSen: senInfo });
     if (R.M) {
-      ZU.kisoSen(Nazori.kisoSen(R.M.kukanSen));
+      ZU.kisoSen(R.kisoK = Nazori.kisoSen(R.M.kukanSen));
+      baseNazoriKaku();
       ZU.kugiri(R.kugiriJ = KugiriSen.junbi(R.M, R.damper));
       R.kugiriJ.settei = kugiriSettei();
     }
@@ -7357,25 +7477,25 @@ function zentaiRyoKaku() {
   $("zentaiRyo").innerHTML = "合計 " + f3(ari ? D.ryo : Z.gokei) + " m³" + (ari ? keiMoji(Z.gokei, D.ryo) : "");
   $("zentaiMashi").hidden = ari;
 }
+const BASE_HABA_DASU = false;
 function baseShikiDasu(R) {
   const box = $("zenchoBase");
-  let B = null;
+  if (!BASE_HABA_DASU) {
+    box.innerHTML = '<div class="ki">ベースの幅ごとの長さは準備中です(図面の幅の数字を読めるようにしてから出します)</div>';
+    return;
+  }
+  let H = null;
   try {
-    B = R.M && ((K) => BaseShiki.keisan(R.M, K.shapes, { moto: K.moto }))(R.katachi || BaseKatachi.katachi(R.base, { pits: R.pits }));
+    H = R.M && ((K) => BaseShiki.habaBetsu(R.M, K.shapes, { moto: K.moto }))(R.katachi || BaseKatachi.katachi(R.base, { pits: R.pits }));
   } catch (e) {
     console.warn(e);
   }
-  if (!B) {
-    box.innerHTML = '<div class="ki">ベースの式を出せませんでした</div>';
+  if (!H || !H.haba.length) {
+    box.innerHTML = '<div class="ki">ベースの幅を出せませんでした</div>';
     return;
   }
-  const na = (v, N) => {
-    const k = Object.keys(N || {}).find((k2) => N[k2] === v);
-    return k || String(v);
-  };
-  const ichi = (h) => "(" + na(h.x, R.g.XN) + "・" + na(h.y, R.g.YN) + ")";
-  const z = R.M.zentai.base;
-  box.innerHTML = `<div><div class="na">ベースの面積</div><div class="shi">${B.men.toFixed(3)} m² × 0.24 m = ${f3(B.hira)} m³</div></div><div><div class="na">ハンチ分(${B.hanchList.filter((h) => !h.fb).length}か所)</div><div class="shi">${f3(Math.abs(B.hanch) < 5e-4 ? 0 : B.hanch)} m³</div></div><div><div class="na">FB(ベースの線がない所。幅330・380幅は490)</div><div class="shi">${f3(B.fb)} m³</div></div>` + (B.hashira > 5e-4 ? `<div><div class="na">柱の下(幅330・490からはみ出す所)</div><div class="shi">${f3(B.hashira)} m³</div></div>` : "") + `<div class="gokei">合計 ${f3(B.gokei)} m³(全体の量のベース ${f3(z)} と同じ)</div><details><summary>面積の内訳</summary><div class="ki">外の形 ${B.soto.toFixed(3)} m² − 開口${B.kaiko.length}か所 ${B.kaiko.reduce((a, v) => a + v, 0).toFixed(3)} m²${B.pit ? " ＋ エレベーターピットの床 " + B.pit.toFixed(3) + " m²" : ""} = ${B.men.toFixed(3)} m²<br>開口(ベースの抜けた所): ${B.kaiko.map((v) => v.toFixed(2)).join("・") || "なし"} m²</div></details><details><summary>ハンチ分の内訳</summary><div class="ki">1か所 =(0.1 × 段差 ＋ 斜めの長さ × 段差 ÷ 2)× ベースの幅<br>` + B.hanchList.map((h) => `${ichi(h)} 寸法${h.Sn} 段差${h.dansa} 幅${h.haba}: (0.1×${mStr(h.dansa)} ＋ ${mStr(h.Ls)}×${mStr(h.dansa)}÷2)×${mStr(h.haba)} = ${f3(h.v)}${h.fb ? "(FBに入っている)" : ""}`).join("<br>") + `<br>FBでないものを足すと ${f3(B.hanchShiki)} m³(上のハンチ分との差は、斜めの所を細かく区切って数えるときの丸め)</div></details>`;
+  const m = (v) => (v / 1e3).toFixed(2) + " m";
+  box.innerHTML = `<table class="wari" style="width:100%"><tr><td style="color:var(--mute)">ベースの幅</td><td style="text-align:right;color:var(--mute)">芯の長さ</td></tr>` + H.haba.map((h) => `<tr><td>${h.fb ? esc(h.na) : h.haba}</td><td style="text-align:right">${m(h.m)}</td></tr>`).join("") + (H.hiroi > 0 ? `<tr><td>幅を測れない所</td><td style="text-align:right">${m(H.hiroi)}</td></tr>` : "") + `<tr><td><b>計</b></td><td style="text-align:right"><b>${m(H.zentai)}</b></td></tr></table>`;
 }
 function zenchoDasu(R) {
   let z = null;
@@ -7396,7 +7516,20 @@ function zenchoDasu(R) {
   $("zenchoMoji").textContent = z ? "全長 " + (z.zentai / 1e3).toFixed(2) + " m" : "";
   if (!z) return;
   const m = (v) => (v / 1e3).toFixed(2) + " m";
-  $("zencho").innerHTML = [["220幅", z.h220], ["380幅(下段だけ・段違い)", z.h380], ["増し打ち220(380幅の上。内訳)", z.mashi220]].map(([na, v, b]) => `<tr><td>${b ? "<b>" + na + "</b>" : na}</td><td style="text-align:right">${b ? "<b>" + m(v) + "</b>" : m(v)}</td></tr>`).join("");
+  const fuka = { 0: "標準", 300: "300ダウン", 600: "600ダウン", 900: "900ダウン" }, dl = {};
+  for (const s of R.M && R.M.kukanSen || []) dl[s.depth] = (dl[s.depth] || 0) + (s.b - s.a);
+  const dv = (t) => t === "0" ? 0 : /^\d+(\.\d+)?D$/.test(t) ? Math.round(parseFloat(t) * 100) : NaN, sa = {};
+  for (const h of R.hanch || []) {
+    const [p0, p1] = String(h[5]).split("→");
+    const d = Math.abs(dv(p1) - dv(p0));
+    const k = isNaN(d) ? "?" : d;
+    if (!sa[k]) sa[k] = { n: 0, uchi: {}, fb: 0 };
+    sa[k].n++;
+    sa[k].uchi[h[5]] = (sa[k].uchi[h[5]] || 0) + 1;
+    if (h[6] === "FB") sa[k].fb++;
+  }
+  const gyo = (na, v) => `<tr><td>${na}</td><td style="text-align:right">${v}</td></tr>`;
+  $("zencho").innerHTML = Object.keys(dl).map(Number).sort((a, b) => a - b).map((d) => gyo((fuka[d] || d + "ダウン") + "の全長", m(dl[d]))).join("") + (Object.keys(sa).length ? Object.keys(sa).sort((a, b) => (a === "?") - (b === "?") || a - b).map((k) => gyo("ハンチ " + (k === "?" ? "差が分からない" : "差" + k), sa[k].n + `か所<div style="font-size:12px;color:var(--mute)">${Object.entries(sa[k].uchi).sort(([a], [b]) => dv(a.split("→")[0]) - dv(b.split("→")[0])).map(([t, n]) => esc(t) + " " + n).join("・")}${sa[k].fb ? "、うちFB " + sa[k].fb : ""}</div>`)).join("") : gyo("ハンチ", "なし")) + [["220幅", z.h220], ["380幅(下段だけ・段違い)", z.h380], ["増し打ち220(380幅の上。内訳)", z.mashi220]].map(([na, v, b]) => `<tr><td>${b ? "<b>" + na + "</b>" : na}</td><td style="text-align:right">${b ? "<b>" + m(v) + "</b>" : m(v)}</td></tr>`).join("");
 }
 let ZU = null;
 let YOTO = null;
@@ -7444,10 +7577,10 @@ function daisuDasu() {
   const D = Daisu.keisan(Z, DS);
   $("kurumaBtns").innerHTML = Daisu.KURUMA.map((k) => `<button type="button" data-k="${k.id}" aria-pressed="${k.id === D.kuruma.id}">${k.na}</button>`).join("");
   const gyo = (na, k, h) => `<tr><td>${na}</td><td>${h.p ? "+" + h.p + "%" : "過不足なし"}</td></tr><tr><td></td><td>${f3(h.ryo)} m³ → ${daiMoji(h)}</td></tr>`;
-  const hi = UCHI && UCHI.L.length && YOTO === "uchiwake" ? hiNarabe(UCHI.W, UCHI.L, true) : [];
+  const hi = UCHI && UCHI.L.length && (YOTO === "uchiwake" || YOTO === "daisu") ? hiNarabe(UCHI.W, UCHI.L, true) : [];
   if (hi.length) {
     const Ds = hi.map((h) => Daisu.keisan(h, DS)), wa = (p) => p ? "+" + p + "%" : "過不足なし";
-    $("daisuHyo").innerHTML = `<tr><td colspan="2" style="color:var(--mute)">ベース ${wa(D.base.p)}・立上り ${wa(D.tachi.p)}</td></tr>` + hi.map((h, i) => `<tr><td colspan="2"><span style="display:inline-block;width:10px;height:10px;background:${h.iro};margin-right:4px"></span><b>${h.no}日目</b> ${nw("<b>" + Ds[i].dai + "台</b>")}</td></tr><tr><td>ベース</td><td>${nw(f3(Ds[i].base.ryo) + " m³ → " + daiMoji(Ds[i].base))}</td></tr><tr><td>立上り</td><td>${nw(f3(Ds[i].tachi.ryo) + " m³ → " + daiMoji(Ds[i].tachi))}</td></tr>`).join("") + `<tr><td><b>合計</b></td><td><b>${f3(Ds.reduce((s, d) => s + d.ryo, 0))} m³ → ${Ds.reduce((s, d) => s + d.dai, 0)}台</b></td></tr>`;
+    $("daisuHyo").innerHTML = `<tr><td colspan="2"><b>全体 ${Ds.reduce((s, d) => s + d.dai, 0)}台</b> <span style="color:var(--mute)">(区切り${UCHI.L.length}本で${hi.length}日に分けた台数)</span></td></tr><tr><td colspan="2" style="color:var(--mute)">ベース ${wa(D.base.p)}・立上り ${wa(D.tachi.p)}</td></tr>` + hi.map((h, i) => `<tr><td colspan="2"><span style="display:inline-block;width:10px;height:10px;background:${h.iro};margin-right:4px"></span><b>${h.no}日目</b> ${nw("<b>" + Ds[i].dai + "台</b>")}</td></tr><tr><td>ベース</td><td>${nw(f3(Ds[i].base.ryo) + " m³ → " + daiMoji(Ds[i].base))}</td></tr><tr><td>立上り</td><td>${nw(f3(Ds[i].tachi.ryo) + " m³ → " + daiMoji(Ds[i].tachi))}</td></tr>`).join("") + `<tr><td><b>合計</b></td><td><b>${f3(Ds.reduce((s, d) => s + d.ryo, 0))} m³ → ${Ds.reduce((s, d) => s + d.dai, 0)}台</b></td></tr>`;
     return;
   }
   $("daisuHyo").innerHTML = gyo("ベース", "wariBase", D.base) + gyo("立上り", "wariTachi", D.tachi) + `<tr><td><b>合計</b></td><td><b>${f3(D.ryo)} m³ → ${D.dai}台</b></td></tr>`;
@@ -7780,20 +7913,21 @@ function uchiwakeKeisan(L, info) {
 }
 function yotoKae(k) {
   YOTO = k;
-  $("bDaisu").setAttribute("aria-pressed", k === "daisu");
-  $("bTsuika").setAttribute("aria-pressed", k === "tsuika");
-  $("bUchiwake").setAttribute("aria-pressed", k === "uchiwake");
   $("tsuikaShu").hidden = k !== "tsuika";
   $("erabuBox").hidden = !ZU || !(last && last.M);
   for (const b of document.querySelectorAll("[data-yoto]")) b.hidden = !!k && b.dataset.yoto === k;
   $("erabuMidashi").textContent = k ? "ほかにすること" : "次に、やることを選んでください";
+  const NA = { daisu: "台数", tsuika: "追加量", uchiwake: "打設を分ける" };
+  $("yotoObi").hidden = !k || !ZU;
+  $("yotoObi").textContent = NA[k] || "";
+  $("zuFuda").hidden = !NA[k];
+  $("zuFuda").textContent = NA[k] || "";
   $("tsugiMidashi").textContent = k ? "ほかにすること" : "次に、やることを選ぶ";
   if (k) $("senInfo").after($("erabuBox"));
   else $("zumenInfo").after($("erabuBox"));
-  $("yotoGyo").hidden = true;
   $("sousaGyo").hidden = false;
   const kaku = k === "tsuika" || k === "uchiwake";
-  for (const id of ["bNazoru", "bIdou", "bKesu1"]) $(id).hidden = true;
+  $("bKesu1").hidden = true;
   $("bKesuAll").hidden = !kaku;
   const db = $("daisuBox");
   db.hidden = k !== "daisu" && k !== "uchiwake";
@@ -7811,8 +7945,6 @@ function yotoKae(k) {
   ZU.yoto(k === "uchiwake" ? "uchiwake" : "tsuika");
   modeKae(k === "tsuika" || k === "uchiwake" ? "nazoru" : "idou");
 }
-$("bTsuika").onclick = () => yotoKae("tsuika");
-$("bDaisu").onclick = () => yotoKae("daisu");
 function tatamu(on) {
   document.querySelector(".ireru").classList.toggle("tatamu", on);
   $("erabuMoji").textContent = on ? "PDFを選び直す" : "図面のPDFを選ぶ";
@@ -7828,12 +7960,9 @@ if ("IntersectionObserver" in window) new IntersectionObserver((es) => {
   erabuObiKaku();
 }).observe($("erabuBox"));
 function erabu(k) {
+  zuOokiku(false);
   yotoKae(k);
-  if (k === "tsuika" || k === "uchiwake") zuOokiku(true);
-  else {
-    zuOokiku(false);
-    $("daisuBashoUe").scrollIntoView({ block: "start", behavior: "smooth" });
-  }
+  $("yotoObi").scrollIntoView({ block: "start", behavior: "smooth" });
 }
 for (const b of document.querySelectorAll("[data-yoto]")) b.onclick = () => erabu(b.dataset.yoto);
 let ROKU_D = false;
@@ -7874,8 +8003,13 @@ $("b6D").onclick = () => {
     senInfo(ZU.sen());
   }
 };
+function baseNazoriKaku() {
+  const R = last;
+  if (R && R.kisoK) R.kisoK.base = SHU === "base" && R.M && R.M.baseNaka ? { naka: R.M.baseNaka, chikai: R.M.chikai } : null;
+}
 function shuKae(k) {
   SHU = k;
+  baseNazoriKaku();
   $("bTachi").setAttribute("aria-pressed", k === "tachi");
   $("bBase").setAttribute("aria-pressed", k === "base");
   if (k === "tachi" && ZU && YOTO === "tsuika" && ZU.miModosu()) return;
@@ -7889,21 +8023,16 @@ document.addEventListener("keydown", (e) => {
 });
 $("bTachi").onclick = () => shuKae("tachi");
 $("bBase").onclick = () => shuKae("base");
-$("bUchiwake").onclick = () => yotoKae("uchiwake");
 const nagasa = (P) => P.reduce((s, p, i) => i ? s + Math.abs(p[0] - P[i - 1][0]) + Math.abs(p[1] - P[i - 1][1]) : 0, 0);
 function modeKae(m) {
   if (!ZU) return;
   ZU.mode(m);
-  $("bNazoru").setAttribute("aria-pressed", m === "nazoru");
-  $("bIdou").setAttribute("aria-pressed", m === "idou");
   ukiDouguKaku();
   erabuObiKaku();
 }
 function ukiDouguKaku() {
   const kaku = !!ZU && (YOTO === "tsuika" || YOTO === "uchiwake");
   $("ukiDougu").hidden = !kaku;
-  $("imaMode").hidden = true;
-  $("uMode").hidden = true;
   $("zuHiraku").hidden = !kaku;
   $("zuHiraku").firstElementChild.textContent = YOTO === "uchiwake" ? "図面を開いて区切る" : "図面を開いてなぞる";
   $("zuHiraku").setAttribute("aria-label", $("zuHiraku").firstElementChild.textContent);
@@ -7912,17 +8041,10 @@ function ukiDouguKaku() {
     $("zuRyo").textContent = "";
     return;
   }
-  const m = ZU.mode();
-  const kakuNa = YOTO === "uchiwake" ? "区切る" : "なぞる";
-  $("bNazoru").textContent = kakuNa;
-  $("imaMode").textContent = "いま：" + (m === "idou" ? "✋ 動かす" : "✏ " + kakuNa);
-  $("imaMode").classList.toggle("kaku", m !== "idou");
-  $("uMode").textContent = m === "idou" ? "✏ " + kakuNa + "に切り替え" : "✋ 動かすに切り替え";
   const mi = YOTO === "tsuika" && last && last.M ? ZU.sen().filter((l) => l.mi).length : 0;
   $("uKakutei").hidden = !mi;
   $("uKakutei").textContent = "確定(" + mi + "本)";
 }
-$("uMode").onclick = () => ZU && modeKae(ZU.mode() === "idou" ? "nazoru" : "idou");
 $("uKesu1").onclick = () => $("bKesu1").click();
 let ZU_REKI = false;
 function zuMieru() {
@@ -8025,15 +8147,20 @@ document.addEventListener("gesturestart", (e) => {
 });
 function zuRyoKaku() {
   let t = "";
-  if (YOTO === "tsuika" && !$("tsuikaBox").hidden) t = "追加量(" + (SHU === "base" ? "ベース" : "立上り") + ") " + $("tsuikaRyo").textContent;
-  else if (YOTO === "uchiwake" && UCHI && UCHI.L.length && last && last.M) t = hiNarabe(UCHI.W, UCHI.L, true).map((h) => h.no + "日目 " + f3(h.gokei)).join("・") + " m³";
+  if (YOTO === "tsuika" && !$("tsuikaBox").hidden) {
+    const r = $("tsuikaRyo").textContent, mei = "追加量(" + (SHU === "base" ? "ベース" : "立上り") + ")";
+    const mi = ZU ? ZU.sen().filter((l) => l.mi).length : 0;
+    if (/\d/.test(r)) {
+      $("zuRyo").innerHTML = `<small>${mei}</small> <b class="ookiiRyo">${esc(r)}</b>` + (mi ? ` <small>(点線${mi}本はまだ入っていない。「確定」で入る)</small>` : "");
+      return;
+    }
+    t = mei + (mi ? " 点線は「確定」を押すと量に入る" : "");
+  } else if (YOTO === "uchiwake" && UCHI && UCHI.L.length && last && last.M) t = hiNarabe(UCHI.W, UCHI.L, true).map((h) => h.no + "日目 " + f3(h.gokei)).join("・") + " m³";
   const nL = ZU ? ZU.sen().length : 0;
   if (!t && YOTO === "tsuika" && !nL) t = "残りの基礎を1本指でなぞる";
   if (!t && YOTO === "uchiwake" && !nL) t = "緑の所を1本指で押すと区切れる";
   $("zuRyo").textContent = t;
 }
-$("bNazoru").onclick = () => modeKae("nazoru");
-$("bIdou").onclick = () => modeKae("idou");
 $("bZentai").onclick = () => ZU && ZU.zentai();
 $("bKesu1").onclick = () => ZU && ZU.kesu("1");
 $("bKesuAll").onclick = () => ZU && ZU.kesu("zenbu");
